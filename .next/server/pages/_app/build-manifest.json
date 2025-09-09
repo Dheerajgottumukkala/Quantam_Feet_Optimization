@@ -1,0 +1,18 @@
+{
+  "devFiles": [],
+  "ampDevFiles": [],
+  "polyfillFiles": [],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [],
+  "pages": {
+    "/_app": [
+      "static/chunks/[root-of-the-server]__473611d6._.js",
+      "static/chunks/2faeb_react-dom_42d5e15e._.js",
+      "static/chunks/2faeb_b816017f._.js",
+      "static/chunks/[root-of-the-server]__9a16dcff._.js",
+      "static/chunks/Desktop_falqon-fleet-optimizer_pages__app_5771e187._.js",
+      "static/chunks/Desktop_falqon-fleet-optimizer_pages__app_b22c8da4._.js"
+    ]
+  },
+  "ampFirstPages": []
+}

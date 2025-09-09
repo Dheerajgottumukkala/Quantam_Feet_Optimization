@@ -1,0 +1,82 @@
+[geocode] Trying 'Vishnu Institute of Technology, Bhimavaram, Andhra Pradesh, India' ...
+[geocode] Success for 'Vishnu Institute of Technology, Bhimavaram': (16.5659605, 81.5225313)
+[geocode] Trying 'Kalla Farm, Andhra Pradesh, India' ...
+[geocode] Trying 'Kalla, West Godavari, Andhra Pradesh, India' ...
+[geocode] Success for 'Kalla Farm': (16.5360809, 81.4113414)
+[geocode] Trying 'Undi Urban Farm, Andhra Pradesh, India' ...
+[geocode] Trying 'Undi, West Godavari, Andhra Pradesh, India' ...
+[geocode] Success for 'Undi Urban Farm': (16.5856693, 81.4577972)
+[geocode] Trying 'Narsapur Milk Dairy, Andhra Pradesh, India' ...
+[geocode] Trying 'Narsapur, West Godavari, Andhra Pradesh, India' ...
+[geocode] Success for 'Narsapur Milk Dairy': (16.4405615, 81.7024526)
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1757394467.452624  100944 config.cc:230] gRPC experiments enabled: call_status_override_on_cancellation, event_engine_client, event_engine_dns, event_engine_listener, http2_stats_fix, monitoring_experiment, pick_first_new, trace_record_callops, work_serializer_clears_time_cache
+{
+  "Truck 1": {
+    "route": [
+      "Vishnu Institute of Technology, Bhimavaram",
+      "Kalla Farm",
+      "Undi Urban Farm",
+      "Narsapur Milk Dairy",
+      "Vishnu Institute of Technology, Bhimavaram"
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "action": "Drive",
+        "from": "Vishnu Institute of Technology, Bhimavaram",
+        "to": "Kalla Farm",
+        "notes": null
+      },
+      {
+        "step": 2,
+        "action": "Drive",
+        "from": "Kalla Farm",
+        "to": "Undi Urban Farm",
+        "notes": null
+      },
+      {
+        "step": 3,
+        "action": "Drive",
+        "from": "Undi Urban Farm",
+        "to": "Narsapur Milk Dairy",
+        "notes": null
+      },
+      {
+        "step": 4,
+        "action": "Drive",
+        "from": "Narsapur Milk Dairy",
+        "to": "Vishnu Institute of Technology, Bhimavaram",
+        "notes": null
+      }
+    ],
+    "constraints": {
+      "utilization_pct": 87.5,
+      "flags": [
+        {
+          "level": "ok",
+          "message": "Capacity constraint satisfied"
+        },
+        {
+          "level": "ok",
+          "message": "Refrigerated truck constraint satisfied"
+        },
+        {
+          "level": "warn",
+          "message": "Milk time window violated (time: 154.5min > 120min)"
+        }
+      ],
+      "time_window_min": 120.0
+    },
+    "summary": {
+      "type": "Refrigerated",
+      "capacity_t": 8,
+      "load_t": 7.0,
+      "total_distance_km_estimated": 74.1,
+      "total_time_min_estimated": 127.0,
+      "violations": [
+        "Time window violated: 127.0 min > 120.0 min"
+      ]
+    }
+  }
+}

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falqon Fleet Route Visualization</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .info-panel {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .route-info, .truck-info {
+            flex: 1;
+            padding: 20px;
+        }
+        
+        .route-info {
+            border-right: 1px solid #e9ecef;
+        }
+        
+        .info-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .route-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+        
+        .step-text {
+            flex: 1;
+            font-size: 0.95em;
+        }
+        
+        .truck-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+        
+        .legend {
+            background: white;
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        .start { background-color: #28a745; }
+        .stop { background-color: #dc3545; }
+        .route { background-color: #667eea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚛 Falqon Fleet Route Optimizer</h1>
+            <p>Truck 1 - Refrigerated Delivery Route in Andhra Pradesh</p>
+        </div>
+        
+        <div class="info-panel">
+            <div class="route-info">
+                <div class="info-title">📍 Route Steps</div>
+                <div class="route-step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Start: Vishnu Institute of Technology, Bhimavaram</div>
+                </div>
+                <div class="route-step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Stop 1: Kalla Farm</div>
+                </div>
+                <div class="route-step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Stop 2: Undi Urban Farm</div>
+                </div>
+                <div class="route-step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Stop 3: Narsapur Milk Dairy</div>
+                </div>
+                <div class="route-step">
+                    <div class="step-number">5</div>
+                    <div class="step-text">Return: Vishnu Institute of Technology, Bhimavaram</div>
+                </div>
+            </div>
+            
+            <div class="truck-info">
+                <div class="info-title">📊 Truck Statistics</div>
+                <div class="truck-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">74.1</div>
+                        <div class="stat-label">Total Distance (km)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">127</div>
+                        <div class="stat-label">Total Time (min)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">7.0/8</div>
+                        <div class="stat-label">Load (tonnes)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">87.5%</div>
+                        <div class="stat-label">Utilization</div>
+                    </div>
+                </div>
+                <div class="warning">
+                    ⚠️ Time window violated: 127.0 min > 120.0 min limit
+                </div>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color start"></div>
+                <span>Start/End Point</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color stop"></div>
+                <span>Delivery Stops</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color route"></div>
+                <span>Route Path</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Route data with coordinates from your output
+        const locations = {
+            "Vishnu Institute of Technology, Bhimavaram": [16.5659605, 81.5225313],
+            "Kalla Farm": [16.5360809, 81.4113414],
+            "Undi Urban Farm": [16.5856693, 81.4577972],
+            "Narsapur Milk Dairy": [16.4405615, 81.7024526]
+        };
+
+        const route = [
+            "Vishnu Institute of Technology, Bhimavaram",
+            "Kalla Farm",
+            "Undi Urban Farm",
+            "Narsapur Milk Dairy",
+            "Vishnu Institute of Technology, Bhimavaram"
+        ];
+
+        // Initialize map centered on the route area
+        const map = L.map('map').setView([16.5, 81.5], 11);
+
+        // Add Google Satellite tiles for real map view
+        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            attribution: '© Google Maps',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Add Google Hybrid layer (satellite + labels) as alternative
+        const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            attribution: '© Google Maps'
+        });
+
+        // Add layer control to switch between satellite and hybrid
+        const baseLayers = {
+            "Satellite": L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                attribution: '© Google Maps',
+                maxZoom: 20
+            }),
+            "Hybrid (Satellite + Labels)": hybridLayer,
+            "Street Map": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            })
+        };
+
+        L.control.layers(baseLayers).addTo(map);
+
+        // Enhanced custom icons with better visibility on satellite maps
+        const startIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: '<div style="background-color: #28a745; width: 35px; height: 35px; border-radius: 50%; border: 4px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px;">🏠</div>',
+            iconSize: [35, 35],
+            iconAnchor: [17.5, 17.5]
+        });
+
+        const stopIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: '<div style="background-color: #dc3545; width: 30px; height: 30px; border-radius: 50%; border: 4px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">📦</div>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+
+        // Add markers for each location
+        const markers = [];
+        route.forEach((locationName, index) => {
+            if (locations[locationName]) {
+                const [lat, lng] = locations[locationName];
+                const isStartEnd = locationName === "Vishnu Institute of Technology, Bhimavaram";
+                
+                const marker = L.marker([lat, lng], {
+                    icon: isStartEnd ? startIcon : stopIcon
+                }).addTo(map);
+
+                let popupContent = `<div style="font-weight: bold; margin-bottom: 5px;">${locationName}</div>`;
+                if (isStartEnd) {
+                    popupContent += `<div style="color: #28a745;">🏠 Start/End Point</div>`;
+                    popupContent += `<div style="font-size: 0.9em; color: #666;">Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>`;
+                } else {
+                    popupContent += `<div style="color: #dc3545;">📦 Delivery Stop ${index}</div>`;
+                    popupContent += `<div style="font-size: 0.9em; color: #666;">Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>`;
+                }
+
+                marker.bindPopup(popupContent);
+                markers.push(marker);
+            }
+        });
+
+        // Create route path
+        const routeCoordinates = [];
+        route.forEach(locationName => {
+            if (locations[locationName]) {
+                routeCoordinates.push(locations[locationName]);
+            }
+        });
+
+        // Add route polyline with enhanced visibility
+        const routeLine = L.polyline(routeCoordinates, {
+            color: '#FF6B35',
+            weight: 6,
+            opacity: 0.9,
+            dashArray: '15, 8'
+        }).addTo(map);
+
+        // Add a white outline for better visibility on satellite
+        const routeOutline = L.polyline(routeCoordinates, {
+            color: 'white',
+            weight: 8,
+            opacity: 0.7
+        }).addTo(map);
+        
+        // Bring the main route line to front
+        routeLine.bringToFront();
+
+        // Add enhanced direction arrows along the route
+        for (let i = 0; i < routeCoordinates.length - 1; i++) {
+            const start = routeCoordinates[i];
+            const end = routeCoordinates[i + 1];
+            const midLat = (start[0] + end[0]) / 2;
+            const midLng = (start[1] + end[1]) / 2;
+            
+            // Calculate bearing for arrow rotation
+            const bearing = Math.atan2(end[1] - start[1], end[0] - start[0]) * 180 / Math.PI;
+            
+            const arrowMarker = L.marker([midLat, midLng], {
+                icon: L.divIcon({
+                    className: 'arrow-icon',
+                    html: `<div style="color: #FF6B35; font-size: 20px; text-shadow: 2px 2px 4px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white; transform: rotate(${bearing + 90}deg); font-weight: bold;">➤</div>`,
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                })
+            }).addTo(map);
+        }
+
+        // Fit map to show all markers
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+
+        // Add route summary popup
+        const centerLat = routeCoordinates.reduce((sum, coord) => sum + coord[0], 0) / routeCoordinates.length;
+        const centerLng = routeCoordinates.reduce((sum, coord) => sum + coord[1], 0) / routeCoordinates.length;
+
+        const summaryPopup = L.popup()
+            .setLatLng([centerLat, centerLng])
+            .setContent(`
+                <div style="text-align: center; font-weight: bold; margin-bottom: 10px;">🚛 Route Summary</div>
+                <div><strong>Total Distance:</strong> 74.1 km</div>
+                <div><strong>Estimated Time:</strong> 127 minutes</div>
+                <div><strong>Truck Type:</strong> Refrigerated</div>
+                <div><strong>Load:</strong> 7.0/8.0 tonnes (87.5%)</div>
+                <div style="color: #dc3545; margin-top: 8px; font-size: 0.9em;">⚠️ Time window exceeded by 7 minutes</div>
+            `);
+
+        // Add click event to show summary
+        map.on('click', function(e) {
+            summaryPopup.openOn(map);
+        });
+
+        console.log('Route visualization loaded successfully!');
+        console.log('Locations:', locations);
+        console.log('Route coordinates:', routeCoordinates);
+    </script>
+</body>
+</html>

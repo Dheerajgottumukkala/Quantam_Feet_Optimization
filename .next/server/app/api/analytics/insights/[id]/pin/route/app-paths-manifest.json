@@ -1,0 +1,3 @@
+{
+  "/api/analytics/insights/[id]/pin/route": "app/api/analytics/insights/[id]/pin/route.js"
+}
