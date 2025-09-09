@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
@@ -21,6 +22,7 @@ import {
   Target
 } from 'lucide-react';
 import { toast } from "sonner";
+import { GOOGLE_MAPS_API_KEY } from "@/lib/config";
 
 interface DashboardData {
   totalPickups: number;
@@ -33,11 +35,13 @@ interface DashboardData {
 }
 
 export const FleetDashboard = () => {
-  const [selectedDate, setSelectedDate] = useState("2024-01-15");
-  const [routeType, setRouteType] = useState("quantum");
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const recentMapRef = useRef<HTMLDivElement>(null);
+  const [recentMap, setRecentMap] = useState<any>(null);
+  const [isRecentMapLoaded, setIsRecentMapLoaded] = useState(false);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -184,6 +188,40 @@ export const FleetDashboard = () => {
     }
   ];
 
+  const hasTripsForSelectedDate = (dashboardData?.routes || []).some((route: any) => {
+    const d = (route.updatedAt || route.createdAt || "").slice(0, 10);
+    return d === selectedDate;
+  });
+
+  // Initialize Google Map for Most Recent Completed Route
+  useEffect(() => {
+    const initializeMap = () => {
+      if (!recentMapRef.current || !window.google) return;
+      const mapInstance = new window.google.maps.Map(recentMapRef.current, {
+        zoom: 10,
+        center: { lat: 16.5659605, lng: 81.5225313 },
+        mapTypeId: window.google.maps.MapTypeId.ROADMAP,
+      });
+      setRecentMap(mapInstance);
+      setIsRecentMapLoaded(true);
+    };
+
+    const loadGoogleMaps = () => {
+      if ((window as any).google) {
+        initializeMap();
+        return;
+      }
+      const script = document.createElement('script');
+      (window as any).initRecentMap = initializeMap;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initRecentMap`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    };
+
+    loadGoogleMaps();
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 flex items-center justify-center">
@@ -282,7 +320,7 @@ export const FleetDashboard = () => {
 
       {/* Fleet View */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Map Placeholder */}
+        {/* Most Recent Completed Route with Map */}
         <Card className="bg-slate-800/50 border-slate-700/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-slate-200">
@@ -291,14 +329,16 @@ export const FleetDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 bg-gradient-to-br from-slate-700/50 to-slate-600/50 rounded-lg flex items-center justify-center border border-slate-600/30">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-slate-400 mx-auto mb-3" />
-                <p className="text-slate-400 text-sm">Interactive Route Map</p>
-                <p className="text-slate-500 text-xs mt-1">
-                  {lastTrips[0]?.vehicle || 'FALQ-001'}: {lastTrips[0]?.distance || '342km'} completed
-                </p>
-              </div>
+            <div className="relative">
+              {!isRecentMapLoaded && (
+                <div className="absolute inset-0 bg-slate-700/40 flex items-center justify-center z-10 rounded-lg">
+                  <div className="text-center">
+                    <BarChart3 className="h-12 w-12 text-slate-400 mx-auto mb-3" />
+                    <p className="text-slate-400 text-sm">Loading map...</p>
+                  </div>
+                </div>
+              )}
+              <div ref={recentMapRef} className="h-64 rounded-lg border border-slate-600/30" />
             </div>
           </CardContent>
         </Card>
@@ -472,34 +512,12 @@ export const FleetDashboard = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-slate-400" />
-                <Select value={selectedDate} onValueChange={setSelectedDate}>
-                  <SelectTrigger className="w-40 bg-slate-700/50 border-slate-600">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2024-01-15">Jan 15, 2024</SelectItem>
-                    <SelectItem value="2024-01-14">Jan 14, 2024</SelectItem>
-                    <SelectItem value="2024-01-13">Jan 13, 2024</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={routeType === "classical" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setRouteType("classical")}
-                  className="bg-slate-700 hover:bg-slate-600"
-                >
-                  Classical
-                </Button>
-                <Button
-                  variant={routeType === "quantum" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setRouteType("quantum")}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  Quantum
-                </Button>
+                <Input
+                  type="date"
+                  className="w-44 bg-slate-700/50 border-slate-600"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -513,18 +531,8 @@ export const FleetDashboard = () => {
                 <Timer className="h-16 w-16 text-slate-400 mx-auto mb-4" />
                 <p className="text-slate-400 text-lg mb-2">Route Visualization</p>
                 <p className="text-slate-500 text-sm">
-                  Showing {routeType} route for {selectedDate}
+                  {hasTripsForSelectedDate ? `Showing routes for ${selectedDate}` : `No trip on ${selectedDate}`}
                 </p>
-                <Badge 
-                  variant="outline" 
-                  className={`mt-3 ${
-                    routeType === 'quantum' 
-                      ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' 
-                      : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
-                  }`}
-                >
-                  {routeType.charAt(0).toUpperCase() + routeType.slice(1)} Mode
-                </Badge>
               </div>
             </div>
           </div>

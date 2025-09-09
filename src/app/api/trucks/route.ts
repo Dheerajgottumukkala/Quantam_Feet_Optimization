@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { trucks } from '@/db/schema';
+import { trucks, routeTrucks, shipmentOrders } from '@/db/schema';
 import { eq, like, and, or, desc, asc } from 'drizzle-orm';
 
 const VALID_TRUCK_TYPES = ['Standard', 'Electric', 'Heavy Duty'];
@@ -297,6 +297,12 @@ export async function DELETE(request: NextRequest) {
       }, { status: 404 });
     }
     
+    // Remove dependent records first to satisfy FK constraints
+    await db.delete(routeTrucks)
+      .where(eq(routeTrucks.truckId, parseInt(id)));
+    await db.delete(shipmentOrders)
+      .where(eq(shipmentOrders.truckId, parseInt(id)));
+
     const deletedTruck = await db.delete(trucks)
       .where(eq(trucks.id, parseInt(id)))
       .returning();

@@ -313,7 +313,7 @@ export default function RoutePlanningSection() {
         newErrors[`loadQuantity_${location.id}`] = "Load quantity must be greater than 0";
       }
       if (!location.cropType) {
-        newErrors[`cropType_${location.id}`] = "Crop type is required";
+        newErrors[`cropType_${location.id}`] = "Goods type is required";
       }
     });
 
@@ -536,7 +536,7 @@ export default function RoutePlanningSection() {
       
       if (format === "csv") {
         // Generate CSV content
-        const headers = ["Step", "Address", "Crop Type", "Load (tons)", "Priority", "Distance (km)", "Time (min)"];
+        const headers = ["Step", "Address", "Goods Type", "Load (tons)", "Priority", "Distance (km)", "Time (min)"];
         const rows = optimizedRoute.steps.map((step, index) => [
           index + 1,
           step.address,
@@ -796,14 +796,14 @@ export default function RoutePlanningSection() {
 
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-card-foreground">
-                        Type of Crop *
+                        Type of Goods *
                       </Label>
                       <Select
                         value={location.cropType}
                         onValueChange={(value) => updatePickupLocation(location.id, { cropType: value })}
                       >
                         <SelectTrigger className={errors[`cropType_${location.id}`] ? "border-destructive" : ""}>
-                          <SelectValue placeholder="Select crop" />
+                          <SelectValue placeholder="Select goods" />
                         </SelectTrigger>
                         <SelectContent>
                           {cropTypes.map(crop => (
@@ -877,7 +877,7 @@ export default function RoutePlanningSection() {
           </CardContent>
         </Card>
 
-        {/* Give Path Button */}
+        {/* Generate Path Button */}
         <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
           <DialogTrigger asChild>
             <Button
@@ -885,7 +885,7 @@ export default function RoutePlanningSection() {
               disabled={isLoading || isOverCapacity || selectedTrucks.length === 0}
             >
               <Route className="h-5 w-5 mr-2" />
-              {isLoading ? "Optimizing Route..." : "Give Path"}
+              {isLoading ? "Optimizing Route..." : "Generate Path"}
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-card border-border">

@@ -343,7 +343,7 @@ function RoutePlanningSection() {
                         newErrors[`loadQuantity_${location.id}`] = "Load quantity must be greater than 0";
                     }
                     if (!location.cropType) {
-                        newErrors[`cropType_${location.id}`] = "Crop type is required";
+                        newErrors[`cropType_${location.id}`] = "Goods type is required";
                     }
                 }
             }["RoutePlanningSection.useCallback[validateForm]"]);
@@ -587,7 +587,7 @@ function RoutePlanningSection() {
                     const headers = [
                         "Step",
                         "Address",
-                        "Crop Type",
+                        "Goods Type",
                         "Load (tons)",
                         "Priority",
                         "Distance (km)",
@@ -1407,7 +1407,7 @@ function RoutePlanningSection() {
                                                                         "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:798:22@pickupLocations",
                                                                         "data-orchids-name": "Label",
                                                                         className: "text-sm font-medium text-card-foreground",
-                                                                        children: "Type of Crop *"
+                                                                        children: "Type of Goods *"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
                                                                         lineNumber: 798,
@@ -1428,7 +1428,7 @@ function RoutePlanningSection() {
                                                                                     "data-map-index": index,
                                                                                     "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:806:26@pickupLocations",
                                                                                     "data-orchids-name": "SelectValue",
-                                                                                    placeholder: "Select crop"
+                                                                                    placeholder: "Select goods"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
                                                                                     lineNumber: 806,
@@ -1751,7 +1751,7 @@ function RoutePlanningSection() {
                                             lineNumber: 887,
                                             columnNumber: 15
                                         }, this),
-                                        isLoading ? "Optimizing Route..." : "Give Path"
+                                        isLoading ? "Optimizing Route..." : "Generate Path"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",

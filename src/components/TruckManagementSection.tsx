@@ -49,7 +49,7 @@ export default function TruckManagementSection() {
   const [trucks, setTrucks] = useState<Truck[]>([]);
   const [shipmentOrders, setShipmentOrders] = useState<ShipmentOrder[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"truckNumber" | "availability">("truckNumber");
+  // Removed sort state per requirement; keep only availability filter
   const [filterBy, setFilterBy] = useState<"all" | "Available" | "Not Available">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
@@ -61,6 +61,8 @@ export default function TruckManagementSection() {
   const [editValues, setEditValues] = useState<Partial<Truck>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 10;
+
+  const UNIFIED_TRUCK_IMAGE = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=800&h=500&fit=crop";
 
   const [addTruckForm, setAddTruckForm] = useState<AddTruckFormData>({
     truckNumber: "",
@@ -76,7 +78,6 @@ export default function TruckManagementSection() {
       const params = new URLSearchParams();
       if (searchQuery) params.append('search', searchQuery);
       if (filterBy !== 'all') params.append('availability', filterBy);
-      params.append('sort', sortBy);
       params.append('limit', '50');
 
       const response = await fetch(`/api/trucks?${params.toString()}`);
@@ -91,7 +92,7 @@ export default function TruckManagementSection() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, filterBy, sortBy]);
+  }, [searchQuery, filterBy]);
 
   useEffect(() => {
     fetchTrucks();
@@ -100,17 +101,37 @@ export default function TruckManagementSection() {
   const fetchShipmentOrders = useCallback(async (truckId: number) => {
     setIsLoadingOrders(true);
     try {
-      const response = await fetch(`/api/trucks/${truckId}/shipment-orders?limit=50`);
+      const response = await fetch(`/api/trucks/${truckId}/shipment-orders?limit=1`);
       if (!response.ok) throw new Error('Failed to fetch orders');
       
       const data = await response.json();
-      setShipmentOrders(data);
+      setShipmentOrders(Array.isArray(data) ? data.slice(0, 1) : []);
     } catch (err) {
       toast.error("Failed to load shipment orders");
     } finally {
       setIsLoadingOrders(false);
     }
   }, []);
+
+  const handleDeleteTruck = useCallback(async (id: number) => {
+    try {
+      const confirmed = window.confirm("Delete this truck? This action cannot be undone.");
+      if (!confirmed) return;
+      const response = await fetch(`/api/trucks?id=${id}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete truck');
+      }
+      setTrucks(prev => prev.filter(t => t.id !== id));
+      if (selectedTruck?.id === id) {
+        setSelectedTruck(null);
+        setView('list');
+      }
+      toast.success("Truck deleted successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete truck");
+    }
+  }, [selectedTruck]);
 
   const handleTruckClick = useCallback((truck: Truck) => {
     setSelectedTruck(truck);
@@ -346,7 +367,7 @@ export default function TruckManagementSection() {
               {/* Left: Truck Image */}
               <div className="space-y-4">
                 <img
-                  src={selectedTruck.imageUrl || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=250&fit=crop"}
+                  src={UNIFIED_TRUCK_IMAGE}
                   alt={selectedTruck.truckNumber}
                   className="w-full aspect-video object-cover rounded-lg"
                 />
@@ -517,15 +538,6 @@ export default function TruckManagementSection() {
               />
             </div>
             <div className="flex space-x-2">
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="truckNumber">Truck Number</SelectItem>
-                  <SelectItem value="availability">Availability</SelectItem>
-                </SelectContent>
-              </Select>
               <Select value={filterBy} onValueChange={(value) => setFilterBy(value as typeof filterBy)}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Filter by" />
@@ -541,45 +553,54 @@ export default function TruckManagementSection() {
         </CardContent>
       </Card>
 
-      {/* Truck List */}
-      <div className="space-y-4">
+      {/* Truck Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {filteredAndSortedTrucks.map((truck) => (
           <Card 
             key={truck.id} 
             className="bg-card hover:shadow-lg transition-shadow cursor-pointer"
             onClick={() => handleTruckClick(truck)}
           >
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-6">
-                <div className="relative flex-shrink-0">
-                  <img
-                    src={truck.imageUrl || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=250&fit=crop"}
-                    alt={truck.truckNumber}
-                    className="w-32 h-20 object-cover rounded-lg"
-                  />
-                  <Badge 
-                    className="absolute -top-2 -right-2"
-                    variant={truck.availability === "Available" ? "default" : "secondary"}
+            <CardContent className="p-4 space-y-3">
+              <div className="relative">
+                <img
+                  src={UNIFIED_TRUCK_IMAGE}
+                  alt={truck.truckNumber}
+                  className="w-full h-28 object-cover rounded-lg"
+                />
+                <Badge 
+                  className="absolute top-2 right-2"
+                  variant={truck.availability === "Available" ? "default" : "secondary"}
+                >
+                  {truck.availability}
+                </Badge>
+                <div className="absolute top-2 left-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => { e.stopPropagation(); handleDeleteTruck(truck.id); }}
                   >
-                    {truck.availability}
-                  </Badge>
+                    Delete
+                  </Button>
                 </div>
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">{truck.truckNumber}</h3>
-                    {truck.truckType === "Electric" && (
-                      <TruckElectric className="w-5 h-5 text-green-500" />
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <div className="flex items-center space-x-2">
-                      <Truck className="w-4 h-4" />
-                      <span>{truck.truckType}</span>
-                    </div>
-                    <div>
-                      Capacity: {truck.capacity} tons
-                    </div>
-                  </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">{truck.truckNumber}</h3>
+                  {truck.truckType === "Electric" && (
+                    <TruckElectric className="w-4 h-4 text-green-500" />
+                  )}
+                </div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Truck className="w-4 h-4" />
+                  <span>
+                    {truck.truckType === "Standard" ? "Insulated Trucks" :
+                     truck.truckType === "Electric" ? "Refrigerated Trucks" :
+                     truck.truckType === "Heavy Duty" ? "Refrigerated Trucks" : truck.truckType}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {truck.truckType} • Capacity {truck.capacity} tons
                 </div>
               </div>
             </CardContent>
