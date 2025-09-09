@@ -1020,6 +1020,45 @@ function GoogleMapComponent({ pythonData, className = "" }) {
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!map || !directionsService || !directionsRenderer || !pythonData) return;
         const drawRoute = ()=>{
+            // Prefer explicit coordinates if provided
+            if (pythonData.route_plan && pythonData.route_plan.length >= 2) {
+                const coordsList = pythonData.route_plan;
+                const origin = {
+                    lat: coordsList[0].lat,
+                    lng: coordsList[0].lon
+                };
+                const destination = {
+                    lat: coordsList[coordsList.length - 1].lat,
+                    lng: coordsList[coordsList.length - 1].lon
+                };
+                const waypoints = coordsList.slice(1, -1).map((p)=>({
+                        location: {
+                            lat: p.lat,
+                            lng: p.lon
+                        }
+                    }));
+                const request = {
+                    origin,
+                    destination,
+                    waypoints,
+                    travelMode: window.google.maps.TravelMode.DRIVING,
+                    optimizeWaypoints: false
+                };
+                directionsService.route(request, (result, status)=>{
+                    if (window.google.maps.DirectionsStatus && status === window.google.maps.DirectionsStatus.OK || status === 'OK') {
+                        directionsRenderer.setDirections(result);
+                        // Add custom markers using provided names
+                        addCustomMarkersFromPlan(coordsList);
+                    } else {
+                        console.error('Directions request failed:', status);
+                        addCustomMarkersFromPlan(coordsList);
+                        // Try segment-by-segment directions as a fallback
+                        drawDirectionsBySegments(coordsList);
+                    }
+                });
+                return;
+            }
+            // Fallback to named locations via geocodedPoints
             const route = pythonData.route;
             if (route.length < 2) return;
             const waypoints = route.slice(1, -1).map((location)=>{
@@ -1036,7 +1075,7 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                 optimizeWaypoints: false
             };
             directionsService.route(request, (result, status)=>{
-                if (status === window.google.maps.DirectionsStatus.OK) {
+                if (window.google.maps.DirectionsStatus && status === window.google.maps.DirectionsStatus.OK || status === 'OK') {
                     directionsRenderer.setDirections(result);
                     // Add custom markers for each step
                     addCustomMarkers(route);
@@ -1044,6 +1083,15 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                     console.error('Directions request failed:', status);
                     // Fallback: show markers without route
                     addCustomMarkers(route);
+                    // Attempt to draw straight-line polyline between geocoded points
+                    const coordsList = route.map((name)=>geocodedPoints[name]).filter(Boolean);
+                    if (coordsList.length >= 2) {
+                        drawDirectionsBySegments(coordsList.map((p)=>({
+                                name: '',
+                                lat: p.lat,
+                                lon: p.lng
+                            })));
+                    }
                 }
             });
         };
@@ -1088,6 +1136,102 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                 });
             });
         };
+        const drawPolylineFromPlan = (routePlan)=>{
+            const path = routePlan.map((p)=>({
+                    lat: p.lat,
+                    lng: p.lon
+                }));
+            drawPolyline(path);
+        };
+        const drawPolyline = (path)=>{
+            const polyline = new window.google.maps.Polyline({
+                path,
+                geodesic: true,
+                strokeColor: '#FF6B35',
+                strokeOpacity: 0.9,
+                strokeWeight: 5,
+                map: map
+            });
+            // Fit bounds to the polyline
+            const bounds = new window.google.maps.LatLngBounds();
+            path.forEach((p)=>bounds.extend(p));
+            map.fitBounds(bounds);
+        };
+        const drawDirectionsBySegments = async (routePlan)=>{
+            const allPaths = [];
+            for(let i = 0; i < routePlan.length - 1; i++){
+                const origin = {
+                    lat: routePlan[i].lat,
+                    lng: routePlan[i].lon
+                };
+                const destination = {
+                    lat: routePlan[i + 1].lat,
+                    lng: routePlan[i + 1].lon
+                };
+                const req = {
+                    origin,
+                    destination,
+                    travelMode: window.google.maps.TravelMode.DRIVING
+                };
+                await new Promise((resolve)=>{
+                    directionsService.route(req, (result, status)=>{
+                        if (window.google.maps.DirectionsStatus && status === window.google.maps.DirectionsStatus.OK || status === 'OK') {
+                            const route = result.routes[0];
+                            const path = route.overview_path.map((p)=>({
+                                    lat: p.lat(),
+                                    lng: p.lng()
+                                }));
+                            allPaths.push(...path);
+                        } else {
+                            // As a last resort, draw a straight segment
+                            allPaths.push(origin, destination);
+                        }
+                        resolve();
+                    });
+                });
+            }
+            if (allPaths.length >= 2) {
+                drawPolyline(allPaths);
+            }
+        };
+        const addCustomMarkersFromPlan = (routePlan)=>{
+            routePlan.forEach((point, index)=>{
+                const coords = {
+                    lat: point.lat,
+                    lng: point.lon
+                };
+                const marker = new window.google.maps.Marker({
+                    position: coords,
+                    map: map,
+                    title: point.name,
+                    label: {
+                        text: (index + 1).toString(),
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '14px'
+                    },
+                    icon: {
+                        path: window.google.maps.SymbolPath.CIRCLE,
+                        scale: 12,
+                        fillColor: index === 0 || index === routePlan.length - 1 ? '#28a745' : '#dc3545',
+                        fillOpacity: 1,
+                        strokeColor: 'white',
+                        strokeWeight: 3
+                    }
+                });
+                const infoWindow = new window.google.maps.InfoWindow({
+                    content: `
+            <div class="p-2">
+              <h3 class="font-semibold text-sm">${point.name}</h3>
+              <p class="text-xs text-gray-600">Step ${index + 1}</p>
+            </div>
+          `
+                });
+                marker.addListener('click', ()=>{
+                    infoWindow.open(map, marker);
+                });
+            });
+        };
         drawRoute();
     }, [
         map,
@@ -1097,218 +1241,218 @@ function GoogleMapComponent({ pythonData, className = "" }) {
     ]);
     if (error) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
-            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:225:6",
+            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:352:6",
             "data-orchids-name": "Card",
             className: `bg-card border-border ${className}`,
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardHeader"], {
-                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:226:8",
+                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:353:8",
                     "data-orchids-name": "CardHeader",
                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardTitle"], {
-                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:227:10",
+                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:354:10",
                         "data-orchids-name": "CardTitle",
                         className: "flex items-center gap-2 text-card-foreground",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$map$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Map$3e$__["Map"], {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:228:12",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:355:12",
                                 "data-orchids-name": "Map",
                                 className: "h-5 w-5 text-primary"
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 228,
+                                lineNumber: 355,
                                 columnNumber: 13
                             }, this),
                             "Route Map"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                        lineNumber: 227,
+                        lineNumber: 354,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                    lineNumber: 226,
+                    lineNumber: 353,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
-                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:232:8",
+                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:359:8",
                     "data-orchids-name": "CardContent",
                     className: "flex items-center justify-center h-64",
                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:233:10",
+                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:360:10",
                         "data-orchids-name": "div",
                         className: "text-center space-y-2",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:234:12",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:361:12",
                                 "data-orchids-name": "AlertCircle",
                                 className: "h-12 w-12 text-destructive mx-auto"
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 234,
+                                lineNumber: 361,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:235:12",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:362:12",
                                 "data-orchids-name": "p",
                                 className: "text-destructive",
                                 children: error
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 235,
+                                lineNumber: 362,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                        lineNumber: 233,
+                        lineNumber: 360,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                    lineNumber: 232,
+                    lineNumber: 359,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-            lineNumber: 225,
+            lineNumber: 352,
             columnNumber: 7
         }, this);
     }
     if (!pythonData) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
-            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:244:6",
+            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:371:6",
             "data-orchids-name": "Card",
             className: `bg-card border-border ${className}`,
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardHeader"], {
-                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:245:8",
+                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:372:8",
                     "data-orchids-name": "CardHeader",
                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardTitle"], {
-                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:246:10",
+                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:373:10",
                         "data-orchids-name": "CardTitle",
                         className: "flex items-center gap-2 text-card-foreground",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$map$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Map$3e$__["Map"], {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:247:12",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:374:12",
                                 "data-orchids-name": "Map",
                                 className: "h-5 w-5 text-primary"
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 247,
+                                lineNumber: 374,
                                 columnNumber: 13
                             }, this),
                             "Route Map"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                        lineNumber: 246,
+                        lineNumber: 373,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                    lineNumber: 245,
+                    lineNumber: 372,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
-                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:251:8",
+                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:378:8",
                     "data-orchids-name": "CardContent",
                     className: "flex items-center justify-center h-64",
                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:252:10",
+                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:379:10",
                         "data-orchids-name": "div",
                         className: "text-center space-y-2",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$map$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Map$3e$__["Map"], {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:253:12",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:380:12",
                                 "data-orchids-name": "Map",
                                 className: "h-16 w-16 text-muted-foreground mx-auto"
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 253,
+                                lineNumber: 380,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:254:12",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:381:12",
                                 "data-orchids-name": "p",
                                 className: "text-muted-foreground",
                                 children: "Select trucks and configure pickup locations to generate an optimized route"
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 254,
+                                lineNumber: 381,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                        lineNumber: 252,
+                        lineNumber: 379,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                    lineNumber: 251,
+                    lineNumber: 378,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-            lineNumber: 244,
+            lineNumber: 371,
             columnNumber: 7
         }, this);
     }
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
-        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:264:4",
+        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:391:4",
         "data-orchids-name": "Card",
         className: `bg-card border-border ${className}`,
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardHeader"], {
-                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:265:6",
+                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:392:6",
                 "data-orchids-name": "CardHeader",
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:266:8",
+                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:393:8",
                     "data-orchids-name": "div",
                     className: "flex items-center justify-between",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardTitle"], {
-                            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:267:10",
+                            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:394:10",
                             "data-orchids-name": "CardTitle",
                             className: "flex items-center gap-2 text-card-foreground",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$map$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Map$3e$__["Map"], {
-                                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:268:12",
+                                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:395:12",
                                     "data-orchids-name": "Map",
                                     className: "h-5 w-5 text-primary"
                                 }, void 0, false, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                    lineNumber: 268,
+                                    lineNumber: 395,
                                     columnNumber: 13
                                 }, this),
                                 "Route Map"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                            lineNumber: 267,
+                            lineNumber: 394,
                             columnNumber: 11
                         }, this),
                         pythonData && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:272:12",
+                            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:399:12",
                             "data-orchids-name": "div",
                             className: "flex items-center gap-2",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
-                                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:273:14",
+                                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:400:14",
                                     "data-orchids-name": "Badge",
                                     variant: "secondary",
                                     className: "bg-blue-500/20 text-blue-400",
                                     children: "Python Optimized"
                                 }, void 0, false, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                    lineNumber: 273,
+                                    lineNumber: 400,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
-                                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:276:14",
+                                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:403:14",
                                     "data-orchids-name": "Badge",
                                     variant: "secondary",
                                     className: "bg-green-500/20 text-green-400",
@@ -1318,76 +1462,76 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                    lineNumber: 276,
+                                    lineNumber: 403,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                            lineNumber: 272,
+                            lineNumber: 399,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                    lineNumber: 266,
+                    lineNumber: 393,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                lineNumber: 265,
+                lineNumber: 392,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
-                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:283:6",
+                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:410:6",
                 "data-orchids-name": "CardContent",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:284:8",
+                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:411:8",
                         "data-orchids-name": "div",
                         className: "relative",
                         children: [
                             isLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:286:12",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:413:12",
                                 "data-orchids-name": "div",
                                 className: "absolute inset-0 bg-muted/50 flex items-center justify-center z-10 rounded-lg",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:287:14",
+                                    "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:414:14",
                                     "data-orchids-name": "div",
                                     className: "text-center space-y-2",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:288:16",
+                                            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:415:16",
                                             "data-orchids-name": "div",
                                             className: "animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                            lineNumber: 288,
+                                            lineNumber: 415,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:289:16",
+                                            "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:416:16",
                                             "data-orchids-name": "p",
                                             className: "text-sm text-muted-foreground",
                                             children: "Loading map..."
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                            lineNumber: 289,
+                                            lineNumber: 416,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                    lineNumber: 287,
+                                    lineNumber: 414,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 286,
+                                lineNumber: 413,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:293:10@mapRef",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:420:10@mapRef",
                                 "data-orchids-name": "div",
                                 ref: mapRef,
                                 className: "w-full h-96 rounded-lg border border-border",
@@ -1396,32 +1540,32 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 293,
+                                lineNumber: 420,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                        lineNumber: 284,
+                        lineNumber: 411,
                         columnNumber: 9
                     }, this),
                     pythonData && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:301:10",
+                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:428:10",
                         "data-orchids-name": "div",
                         className: "mt-4 space-y-3",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:302:12",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:429:12",
                                 "data-orchids-name": "div",
                                 className: "grid grid-cols-2 gap-4",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:303:14",
+                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:430:14",
                                         "data-orchids-name": "div",
                                         className: "p-3 bg-muted rounded-lg",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:304:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:431:16",
                                                 "data-orchids-name": "div",
                                                 className: "text-lg font-bold text-card-foreground",
                                                 children: [
@@ -1430,32 +1574,32 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 304,
+                                                lineNumber: 431,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:307:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:434:16",
                                                 "data-orchids-name": "div",
                                                 className: "text-sm text-muted-foreground",
                                                 children: "Total Distance"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 307,
+                                                lineNumber: 434,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                        lineNumber: 303,
+                                        lineNumber: 430,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:309:14",
+                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:436:14",
                                         "data-orchids-name": "div",
                                         className: "p-3 bg-muted rounded-lg",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:310:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:437:16",
                                                 "data-orchids-name": "div",
                                                 className: "text-lg font-bold text-card-foreground",
                                                 children: [
@@ -1464,82 +1608,82 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 310,
+                                                lineNumber: 437,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:313:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:440:16",
                                                 "data-orchids-name": "div",
                                                 className: "text-sm text-muted-foreground",
                                                 children: "Total Time"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 313,
+                                                lineNumber: 440,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                        lineNumber: 309,
+                                        lineNumber: 436,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 302,
+                                lineNumber: 429,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:317:12",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:444:12",
                                 "data-orchids-name": "div",
                                 className: "p-3 bg-muted rounded-lg",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:318:14",
+                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:445:14",
                                         "data-orchids-name": "div",
                                         className: "flex items-center gap-2 mb-2",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Navigation$3e$__["Navigation"], {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:319:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:446:16",
                                                 "data-orchids-name": "Navigation",
                                                 className: "h-4 w-4 text-primary"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 319,
+                                                lineNumber: 446,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:320:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:447:16",
                                                 "data-orchids-name": "span",
                                                 className: "font-medium text-card-foreground",
                                                 children: "Route Summary"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 320,
+                                                lineNumber: 447,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                        lineNumber: 318,
+                                        lineNumber: 445,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:322:14",
+                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:449:14",
                                         "data-orchids-name": "div",
                                         className: "text-sm text-muted-foreground space-y-1",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:323:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:450:16",
                                                 "data-orchids-name": "p",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:323:19",
+                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:450:19",
                                                         "data-orchids-name": "strong",
                                                         children: "Truck Type:"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                        lineNumber: 323,
+                                                        lineNumber: 450,
                                                         columnNumber: 105
                                                     }, this),
                                                     " ",
@@ -1547,20 +1691,20 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 323,
+                                                lineNumber: 450,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:324:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:451:16",
                                                 "data-orchids-name": "p",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:324:19",
+                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:451:19",
                                                         "data-orchids-name": "strong",
                                                         children: "Capacity:"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                        lineNumber: 324,
+                                                        lineNumber: 451,
                                                         columnNumber: 105
                                                     }, this),
                                                     " ",
@@ -1569,20 +1713,20 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 324,
+                                                lineNumber: 451,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:325:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:452:16",
                                                 "data-orchids-name": "p",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:325:19",
+                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:452:19",
                                                         "data-orchids-name": "strong",
                                                         children: "Load:"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                        lineNumber: 325,
+                                                        lineNumber: 452,
                                                         columnNumber: 105
                                                     }, this),
                                                     " ",
@@ -1591,20 +1735,20 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 325,
+                                                lineNumber: 452,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:326:16",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:453:16",
                                                 "data-orchids-name": "p",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:326:19",
+                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:453:19",
                                                         "data-orchids-name": "strong",
                                                         children: "Utilization:"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                        lineNumber: 326,
+                                                        lineNumber: 453,
                                                         columnNumber: 105
                                                     }, this),
                                                     " ",
@@ -1613,142 +1757,142 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 326,
+                                                lineNumber: 453,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                        lineNumber: 322,
+                                        lineNumber: 449,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 317,
+                                lineNumber: 444,
                                 columnNumber: 13
                             }, this),
                             pythonData.constraints.flags.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:331:14",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:458:14",
                                 "data-orchids-name": "div",
                                 className: "p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:332:16",
+                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:459:16",
                                         "data-orchids-name": "div",
                                         className: "flex items-center gap-2 mb-2",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:333:18",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:460:18",
                                                 "data-orchids-name": "AlertCircle",
                                                 className: "h-4 w-4 text-yellow-400"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 333,
+                                                lineNumber: 460,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:334:18",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:461:18",
                                                 "data-orchids-name": "span",
                                                 className: "font-medium text-yellow-400",
                                                 children: "Constraints"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 334,
+                                                lineNumber: 461,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                        lineNumber: 332,
+                                        lineNumber: 459,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:336:16",
+                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:463:16",
                                         "data-orchids-name": "div",
                                         className: "space-y-1",
                                         children: pythonData.constraints.flags.map((flag, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:338:20",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:465:20",
                                                 "data-orchids-name": "div",
                                                 className: "flex items-center gap-2 text-sm",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:339:22",
+                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:466:22",
                                                         "data-orchids-name": "span",
                                                         className: `w-2 h-2 rounded-full ${flag.level === 'ok' ? 'bg-green-400' : flag.level === 'warn' ? 'bg-yellow-400' : 'bg-red-400'}`
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                        lineNumber: 339,
+                                                        lineNumber: 466,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:343:22",
+                                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:470:22",
                                                         "data-orchids-name": "span",
                                                         className: `${flag.level === 'ok' ? 'text-green-400' : flag.level === 'warn' ? 'text-yellow-400' : 'text-red-400'}`,
                                                         children: flag.message
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                        lineNumber: 343,
+                                                        lineNumber: 470,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, index, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 338,
+                                                lineNumber: 465,
                                                 columnNumber: 21
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                        lineNumber: 336,
+                                        lineNumber: 463,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 331,
+                                lineNumber: 458,
                                 columnNumber: 15
                             }, this),
                             pythonData.summary.violations.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:356:14",
+                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:483:14",
                                 "data-orchids-name": "div",
                                 className: "p-3 bg-red-500/10 border border-red-500/20 rounded-lg",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:357:16",
+                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:484:16",
                                         "data-orchids-name": "div",
                                         className: "flex items-center gap-2 mb-2",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:358:18",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:485:18",
                                                 "data-orchids-name": "AlertCircle",
                                                 className: "h-4 w-4 text-red-400"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 358,
+                                                lineNumber: 485,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:359:18",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:486:18",
                                                 "data-orchids-name": "span",
                                                 className: "font-medium text-red-400",
                                                 children: "Violations"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 359,
+                                                lineNumber: 486,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                        lineNumber: 357,
+                                        lineNumber: 484,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:361:16",
+                                        "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:488:16",
                                         "data-orchids-name": "div",
                                         className: "space-y-1",
                                         children: pythonData.summary.violations.map((violation, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:363:20",
+                                                "data-orchids-id": "src\\components\\GoogleMapComponent.tsx:490:20",
                                                 "data-orchids-name": "p",
                                                 className: "text-sm text-red-400",
                                                 children: [
@@ -1757,36 +1901,36 @@ function GoogleMapComponent({ pythonData, className = "" }) {
                                                 ]
                                             }, index, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                                lineNumber: 363,
+                                                lineNumber: 490,
                                                 columnNumber: 21
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                        lineNumber: 361,
+                                        lineNumber: 488,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                                lineNumber: 356,
+                                lineNumber: 483,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                        lineNumber: 301,
+                        lineNumber: 428,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-                lineNumber: 283,
+                lineNumber: 410,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/GoogleMapComponent.tsx",
-        lineNumber: 264,
+        lineNumber: 391,
         columnNumber: 5
     }, this);
 }

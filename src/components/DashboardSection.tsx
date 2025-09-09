@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import GoogleMapComponent from '@/components/GoogleMapComponent';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
@@ -39,9 +40,7 @@ export const FleetDashboard = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const recentMapRef = useRef<HTMLDivElement>(null);
-  const [recentMap, setRecentMap] = useState<any>(null);
-  const [isRecentMapLoaded, setIsRecentMapLoaded] = useState(false);
+  const [pythonData, setPythonData] = useState<any>(null);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -91,6 +90,53 @@ export const FleetDashboard = () => {
     };
 
     fetchDashboardData();
+  }, []);
+
+  // Provide explicit route data for map rendering (not the route planning map)
+  useEffect(() => {
+    const truck1Data = {
+      route: [
+        "Vishnu Institute of Technology, Bhimavaram",
+        "Kalla Farm",
+        "Undi Urban Farm",
+        "Narsapur Milk Dairy",
+        "Vishnu Institute of Technology, Bhimavaram"
+      ],
+      steps: [
+        { step: 1, action: "Drive", from: "Vishnu Institute of Technology, Bhimavaram", to: "Kalla Farm", notes: null },
+        { step: 2, action: "Pickup", from: "Kalla Farm", to: "Kalla Farm", notes: null },
+        { step: 3, action: "Drive", from: "Kalla Farm", to: "Undi Urban Farm", notes: null },
+        { step: 4, action: "Pickup", from: "Undi Urban Farm", to: "Undi Urban Farm", notes: null },
+        { step: 5, action: "Drive", from: "Undi Urban Farm", to: "Narsapur Milk Dairy", notes: null },
+        { step: 6, action: "Delivery", from: "Narsapur Milk Dairy", to: "Narsapur Milk Dairy", notes: null },
+        { step: 7, action: "Drive", from: "Narsapur Milk Dairy", to: "Vishnu Institute of Technology, Bhimavaram", notes: null }
+      ],
+      constraints: {
+        utilization_pct: 87.5,
+        flags: [
+          { level: "ok", message: "Capacity constraint satisfied" },
+          { level: "ok", message: "Refrigerated truck constraint satisfied" },
+          { level: "warn", message: "Milk time window violated (time: 154.5min > 120min)" }
+        ],
+        time_window_min: 120.0
+      },
+      summary: {
+        type: "Refrigerated",
+        capacity_t: 8,
+        load_t: 7.0,
+        total_distance_km_estimated: 74.1,
+        total_time_min_estimated: 127.0,
+        violations: ["Time window violated: 127.0 min > 120.0 min"]
+      },
+      route_plan: [
+        { name: "Vishnu Institute of Technology, Bhimavaram", lat: 16.5659605, lon: 81.5225313 },
+        { name: "Kalla Farm", lat: 16.5360809, lon: 81.4113414 },
+        { name: "Undi Urban Farm", lat: 16.5856693, lon: 81.4577972 },
+        { name: "Narsapur Milk Dairy", lat: 16.4405615, lon: 81.7024526 },
+        { name: "Vishnu Institute of Technology, Bhimavaram", lat: 16.5659605, lon: 81.5225313 }
+      ]
+    };
+    setPythonData(truck1Data);
   }, []);
 
   // Calculate KPIs from real data
@@ -193,34 +239,6 @@ export const FleetDashboard = () => {
     return d === selectedDate;
   });
 
-  // Initialize Google Map for Most Recent Completed Route
-  useEffect(() => {
-    const initializeMap = () => {
-      if (!recentMapRef.current || !window.google) return;
-      const mapInstance = new window.google.maps.Map(recentMapRef.current, {
-        zoom: 10,
-        center: { lat: 16.5659605, lng: 81.5225313 },
-        mapTypeId: window.google.maps.MapTypeId.ROADMAP,
-      });
-      setRecentMap(mapInstance);
-      setIsRecentMapLoaded(true);
-    };
-
-    const loadGoogleMaps = () => {
-      if ((window as any).google) {
-        initializeMap();
-        return;
-      }
-      const script = document.createElement('script');
-      (window as any).initRecentMap = initializeMap;
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initRecentMap`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    };
-
-    loadGoogleMaps();
-  }, []);
 
   if (loading) {
     return (
@@ -329,17 +347,7 @@ export const FleetDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative">
-              {!isRecentMapLoaded && (
-                <div className="absolute inset-0 bg-slate-700/40 flex items-center justify-center z-10 rounded-lg">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 text-slate-400 mx-auto mb-3" />
-                    <p className="text-slate-400 text-sm">Loading map...</p>
-                  </div>
-                </div>
-              )}
-              <div ref={recentMapRef} className="h-64 rounded-lg border border-slate-600/30" />
-            </div>
+            <GoogleMapComponent pythonData={pythonData} className="" />
           </CardContent>
         </Card>
 

@@ -38,6 +38,11 @@ interface PythonRouteData {
     total_time_min_estimated: number;
     violations: string[];
   };
+  route_plan?: Array<{
+    name: string;
+    lat: number;
+    lon: number;
+  }>;
 }
 
 interface GoogleMapComponentProps {
@@ -142,6 +147,37 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
     if (!map || !directionsService || !directionsRenderer || !pythonData) return;
 
     const drawRoute = () => {
+      // Prefer explicit coordinates if provided
+      if (pythonData.route_plan && pythonData.route_plan.length >= 2) {
+        const coordsList = pythonData.route_plan;
+        const origin = { lat: coordsList[0].lat, lng: coordsList[0].lon };
+        const destination = { lat: coordsList[coordsList.length - 1].lat, lng: coordsList[coordsList.length - 1].lon };
+        const waypoints = coordsList.slice(1, -1).map(p => ({ location: { lat: p.lat, lng: p.lon } }));
+
+        const request = {
+          origin,
+          destination,
+          waypoints,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+          optimizeWaypoints: false
+        } as any;
+
+        directionsService.route(request, (result: any, status: any) => {
+          if ((window.google.maps.DirectionsStatus && status === window.google.maps.DirectionsStatus.OK) || status === 'OK') {
+            directionsRenderer.setDirections(result);
+            // Add custom markers using provided names
+            addCustomMarkersFromPlan(coordsList);
+          } else {
+            console.error('Directions request failed:', status);
+            addCustomMarkersFromPlan(coordsList);
+            // Try segment-by-segment directions as a fallback
+            drawDirectionsBySegments(coordsList);
+          }
+        });
+        return;
+      }
+
+      // Fallback to named locations via geocodedPoints
       const route = pythonData.route;
       if (route.length < 2) return;
 
@@ -156,10 +192,10 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
         waypoints: waypoints,
         travelMode: window.google.maps.TravelMode.DRIVING,
         optimizeWaypoints: false
-      };
+      } as any;
 
       directionsService.route(request, (result: any, status: any) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
+        if ((window.google.maps.DirectionsStatus && status === window.google.maps.DirectionsStatus.OK) || status === 'OK') {
           directionsRenderer.setDirections(result);
           
           // Add custom markers for each step
@@ -168,6 +204,11 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
           console.error('Directions request failed:', status);
           // Fallback: show markers without route
           addCustomMarkers(route);
+          // Attempt to draw straight-line polyline between geocoded points
+          const coordsList = route.map(name => geocodedPoints[name as keyof typeof geocodedPoints]).filter(Boolean) as { lat: number; lng: number }[];
+          if (coordsList.length >= 2) {
+            drawDirectionsBySegments(coordsList.map(p => ({ name: '', lat: p.lat, lon: p.lng })));
+          }
         }
       });
     };
@@ -207,6 +248,92 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
                   Action: ${pythonData.steps[index].action}
                 </p>
               ` : ''}
+            </div>
+          `
+        });
+
+        marker.addListener('click', () => {
+          infoWindow.open(map, marker);
+        });
+      });
+    };
+
+    const drawPolylineFromPlan = (routePlan: { name: string; lat: number; lon: number }[]) => {
+      const path = routePlan.map(p => ({ lat: p.lat, lng: p.lon }));
+      drawPolyline(path);
+    };
+
+    const drawPolyline = (path: { lat: number; lng: number }[]) => {
+      const polyline = new window.google.maps.Polyline({
+        path,
+        geodesic: true,
+        strokeColor: '#FF6B35',
+        strokeOpacity: 0.9,
+        strokeWeight: 5,
+        map: map
+      });
+      // Fit bounds to the polyline
+      const bounds = new window.google.maps.LatLngBounds();
+      path.forEach(p => bounds.extend(p as any));
+      map.fitBounds(bounds);
+    };
+
+    const drawDirectionsBySegments = async (routePlan: { name: string; lat: number; lon: number }[]) => {
+      const allPaths: { lat: number; lng: number }[] = [];
+      for (let i = 0; i < routePlan.length - 1; i++) {
+        const origin = { lat: routePlan[i].lat, lng: routePlan[i].lon };
+        const destination = { lat: routePlan[i + 1].lat, lng: routePlan[i + 1].lon };
+        const req = {
+          origin,
+          destination,
+          travelMode: window.google.maps.TravelMode.DRIVING
+        } as any;
+        await new Promise<void>((resolve) => {
+          directionsService.route(req, (result: any, status: any) => {
+            if ((window.google.maps.DirectionsStatus && status === window.google.maps.DirectionsStatus.OK) || status === 'OK') {
+              const route = result.routes[0];
+              const path = route.overview_path.map((p: any) => ({ lat: p.lat(), lng: p.lng() }));
+              allPaths.push(...path);
+            } else {
+              // As a last resort, draw a straight segment
+              allPaths.push(origin, destination);
+            }
+            resolve();
+          });
+        });
+      }
+      if (allPaths.length >= 2) {
+        drawPolyline(allPaths);
+      }
+    };
+    const addCustomMarkersFromPlan = (routePlan: { name: string; lat: number; lon: number }[]) => {
+      routePlan.forEach((point, index) => {
+        const coords = { lat: point.lat, lng: point.lon };
+        const marker = new window.google.maps.Marker({
+          position: coords,
+          map: map,
+          title: point.name,
+          label: {
+            text: (index + 1).toString(),
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          },
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 12,
+            fillColor: index === 0 || index === routePlan.length - 1 ? '#28a745' : '#dc3545',
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: 3
+          }
+        });
+
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: `
+            <div class="p-2">
+              <h3 class="font-semibold text-sm">${point.name}</h3>
+              <p class="text-xs text-gray-600">Step ${index + 1}</p>
             </div>
           `
         });
