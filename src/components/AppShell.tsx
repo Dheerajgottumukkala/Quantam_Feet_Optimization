@@ -128,13 +128,7 @@ export const AppShell = () => {
       )}>
         {/* Top Bar */}
         <header className="bg-gradient-to-r from-slate-900/95 to-slate-800/95 border-b border-white/10 backdrop-blur-xl sticky top-0 z-40">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                FALQON
-              </h1>
-            </div>
-
+          <div className="flex items-center justify-end px-6 py-4">
             <div className="flex items-center space-x-4">
               {/* Route Planning Quick Access */}
               <Button

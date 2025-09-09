@@ -5,7 +5,7 @@ export const GOOGLE_MAPS_API_KEY = "AIzaSyAL1NxRQKy3CEg73c5yoGdfaqIvQGUphp4";
 export const API_CONFIG = {
   googleMaps: {
     apiKey: GOOGLE_MAPS_API_KEY,
-    libraries: ['geometry'],
+    libraries: ['geometry', 'places', 'routes', 'directions'],
     version: 'weekly'
   }
 };

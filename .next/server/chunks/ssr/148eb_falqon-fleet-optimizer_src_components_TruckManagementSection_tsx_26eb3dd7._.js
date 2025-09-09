@@ -23,7 +23,6 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2
 var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$truck$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Truck$3e$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/node_modules/lucide-react/dist/esm/icons/truck.js [app-ssr] (ecmascript) <export default as Truck>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$table$2d$2$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Table2$3e$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/node_modules/lucide-react/dist/esm/icons/table-2.js [app-ssr] (ecmascript) <export default as Table2>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$truck$2d$electric$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__TruckElectric$3e$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/node_modules/lucide-react/dist/esm/icons/truck-electric.js [app-ssr] (ecmascript) <export default as TruckElectric>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$list$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__List$3e$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/node_modules/lucide-react/dist/esm/icons/list.js [app-ssr] (ecmascript) <export default as List>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/node_modules/sonner/dist/index.mjs [app-ssr] (ecmascript)");
 "use client";
 ;
@@ -1118,28 +1117,17 @@ function TruckManagementSection() {
                     "data-orchids-id": "src\\components\\TruckManagementSection.tsx:522:8",
                     "data-orchids-name": "div",
                     className: "flex items-center space-x-2",
-                    children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$list$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__List$3e$__["List"], {
-                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:523:10",
-                            "data-orchids-name": "List",
-                            className: "w-6 h-6"
-                        }, void 0, false, {
-                            fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                            lineNumber: 523,
-                            columnNumber: 11
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
-                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:524:10",
-                            "data-orchids-name": "h2",
-                            className: "text-2xl font-heading font-bold",
-                            children: "Truck Management"
-                        }, void 0, false, {
-                            fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                            lineNumber: 524,
-                            columnNumber: 11
-                        }, this)
-                    ]
-                }, void 0, true, {
+                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
+                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:523:10",
+                        "data-orchids-name": "h2",
+                        className: "text-2xl font-heading font-bold",
+                        children: "Truck Management"
+                    }, void 0, false, {
+                        fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
+                        lineNumber: 523,
+                        columnNumber: 11
+                    }, this)
+                }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
                     lineNumber: 522,
                     columnNumber: 9
@@ -1150,24 +1138,24 @@ function TruckManagementSection() {
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
-                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:529:6",
+                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:528:6",
                 "data-orchids-name": "Card",
                 className: "bg-card",
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
-                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:530:8",
+                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:529:8",
                     "data-orchids-name": "CardContent",
                     className: "p-4",
                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:531:10",
+                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:530:10",
                         "data-orchids-name": "div",
                         className: "flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:532:12",
+                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:531:12",
                                 "data-orchids-name": "div",
                                 className: "flex-1",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
-                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:533:14",
+                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:532:14",
                                     "data-orchids-name": "Input",
                                     placeholder: "Search by truck number or type...",
                                     value: searchQuery,
@@ -1175,16 +1163,16 @@ function TruckManagementSection() {
                                     className: "w-full"
                                 }, void 0, false, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                    lineNumber: 533,
+                                    lineNumber: 532,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                lineNumber: 532,
+                                lineNumber: 531,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:540:12",
+                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:539:12",
                                 "data-orchids-name": "div",
                                 className: "flex space-x-2",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Select"], {
@@ -1192,32 +1180,42 @@ function TruckManagementSection() {
                                     onValueChange: (value)=>setFilterBy(value),
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectTrigger"], {
-                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:542:16",
+                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:541:16",
                                             "data-orchids-name": "SelectTrigger",
                                             className: "w-40",
                                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectValue"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:543:18",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:542:18",
                                                 "data-orchids-name": "SelectValue",
                                                 placeholder: "Filter by"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 543,
+                                                lineNumber: 542,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                            lineNumber: 542,
+                                            lineNumber: 541,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectContent"], {
-                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:545:16",
+                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:544:16",
                                             "data-orchids-name": "SelectContent",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:546:18",
+                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:545:18",
                                                     "data-orchids-name": "SelectItem",
                                                     value: "all",
                                                     children: "All Trucks"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
+                                                    lineNumber: 545,
+                                                    columnNumber: 19
+                                                }, this),
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:546:18",
+                                                    "data-orchids-name": "SelectItem",
+                                                    value: "Available",
+                                                    children: "Available"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
                                                     lineNumber: 546,
@@ -1226,103 +1224,93 @@ function TruckManagementSection() {
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
                                                     "data-orchids-id": "src\\components\\TruckManagementSection.tsx:547:18",
                                                     "data-orchids-name": "SelectItem",
-                                                    value: "Available",
-                                                    children: "Available"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                    lineNumber: 547,
-                                                    columnNumber: 19
-                                                }, this),
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:548:18",
-                                                    "data-orchids-name": "SelectItem",
                                                     value: "Not Available",
                                                     children: "Not Available"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                    lineNumber: 548,
+                                                    lineNumber: 547,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                            lineNumber: 545,
+                                            lineNumber: 544,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                    lineNumber: 541,
+                                    lineNumber: 540,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                lineNumber: 540,
+                                lineNumber: 539,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                        lineNumber: 531,
+                        lineNumber: 530,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                    lineNumber: 530,
+                    lineNumber: 529,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                lineNumber: 529,
+                lineNumber: 528,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:557:6",
+                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:556:6",
                 "data-orchids-name": "div",
                 className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4",
                 children: filteredAndSortedTrucks.map((truck)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
-                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:559:10@filteredAndSortedTrucks",
+                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:558:10@filteredAndSortedTrucks",
                         "data-orchids-name": "Card",
                         className: "bg-card hover:shadow-lg transition-shadow cursor-pointer",
                         onClick: ()=>handleTruckClick(truck),
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
-                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:564:12@filteredAndSortedTrucks",
+                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:563:12@filteredAndSortedTrucks",
                             "data-orchids-name": "CardContent",
                             className: "p-4 space-y-3",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:565:14@filteredAndSortedTrucks",
+                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:564:14@filteredAndSortedTrucks",
                                     "data-orchids-name": "div",
                                     className: "relative",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
-                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:566:16@filteredAndSortedTrucks@UNIFIED_TRUCK_IMAGE",
+                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:565:16@filteredAndSortedTrucks@UNIFIED_TRUCK_IMAGE",
                                             "data-orchids-name": "img",
                                             src: UNIFIED_TRUCK_IMAGE,
                                             alt: truck.truckNumber,
                                             className: "w-full h-28 object-cover rounded-lg"
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                            lineNumber: 566,
+                                            lineNumber: 565,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
-                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:571:16@filteredAndSortedTrucks",
+                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:570:16@filteredAndSortedTrucks",
                                             "data-orchids-name": "Badge",
                                             className: "absolute top-2 right-2",
                                             variant: truck.availability === "Available" ? "default" : "secondary",
                                             children: truck.availability
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                            lineNumber: 571,
+                                            lineNumber: 570,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:577:16@filteredAndSortedTrucks",
+                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:576:16@filteredAndSortedTrucks",
                                             "data-orchids-name": "div",
                                             className: "absolute top-2 left-2",
                                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:578:18@filteredAndSortedTrucks",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:577:18@filteredAndSortedTrucks",
                                                 "data-orchids-name": "Button",
                                                 size: "sm",
                                                 variant: "outline",
@@ -1333,86 +1321,86 @@ function TruckManagementSection() {
                                                 children: "Delete"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 578,
+                                                lineNumber: 577,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                            lineNumber: 577,
+                                            lineNumber: 576,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                    lineNumber: 565,
+                                    lineNumber: 564,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:587:14@filteredAndSortedTrucks",
+                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:586:14@filteredAndSortedTrucks",
                                     "data-orchids-name": "div",
                                     className: "space-y-1",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:588:16@filteredAndSortedTrucks",
+                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:587:16@filteredAndSortedTrucks",
                                             "data-orchids-name": "div",
                                             className: "flex items-center justify-between",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
-                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:589:18@filteredAndSortedTrucks",
+                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:588:18@filteredAndSortedTrucks",
                                                     "data-orchids-name": "h3",
                                                     className: "font-semibold",
                                                     children: truck.truckNumber
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                    lineNumber: 589,
+                                                    lineNumber: 588,
                                                     columnNumber: 19
                                                 }, this),
                                                 truck.truckType === "Electric" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$truck$2d$electric$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__TruckElectric$3e$__["TruckElectric"], {
-                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:591:20@filteredAndSortedTrucks",
+                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:590:20@filteredAndSortedTrucks",
                                                     "data-orchids-name": "TruckElectric",
                                                     className: "w-4 h-4 text-green-500"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                    lineNumber: 591,
+                                                    lineNumber: 590,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                            lineNumber: 588,
+                                            lineNumber: 587,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:594:16@filteredAndSortedTrucks",
+                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:593:16@filteredAndSortedTrucks",
                                             "data-orchids-name": "div",
                                             className: "text-sm text-muted-foreground flex items-center gap-2",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$truck$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Truck$3e$__["Truck"], {
-                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:595:18@filteredAndSortedTrucks",
+                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:594:18@filteredAndSortedTrucks",
                                                     "data-orchids-name": "Truck",
                                                     className: "w-4 h-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                    lineNumber: 595,
+                                                    lineNumber: 594,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:596:18@filteredAndSortedTrucks",
+                                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:595:18@filteredAndSortedTrucks",
                                                     "data-orchids-name": "span",
                                                     children: truck.truckType === "Standard" ? "Insulated Trucks" : truck.truckType === "Electric" ? "Refrigerated Trucks" : truck.truckType === "Heavy Duty" ? "Refrigerated Trucks" : truck.truckType
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                    lineNumber: 596,
+                                                    lineNumber: 595,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                            lineNumber: 594,
+                                            lineNumber: 593,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:602:16@filteredAndSortedTrucks",
+                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:601:16@filteredAndSortedTrucks",
                                             "data-orchids-name": "div",
                                             className: "text-xs text-muted-foreground",
                                             children: [
@@ -1423,130 +1411,130 @@ function TruckManagementSection() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                            lineNumber: 602,
+                                            lineNumber: 601,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                    lineNumber: 587,
+                                    lineNumber: 586,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                            lineNumber: 564,
+                            lineNumber: 563,
                             columnNumber: 13
                         }, this)
                     }, truck.id, false, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                        lineNumber: 559,
+                        lineNumber: 558,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                lineNumber: 557,
+                lineNumber: 556,
                 columnNumber: 7
             }, this),
             filteredAndSortedTrucks.length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:613:8",
+                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:612:8",
                 "data-orchids-name": "div",
                 className: "text-center py-12",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$truck$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Truck$3e$__["Truck"], {
-                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:614:10",
+                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:613:10",
                         "data-orchids-name": "Truck",
                         className: "w-12 h-12 mx-auto text-muted-foreground mb-4"
                     }, void 0, false, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                        lineNumber: 614,
+                        lineNumber: 613,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:615:10",
+                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:614:10",
                         "data-orchids-name": "p",
                         className: "text-muted-foreground",
                         children: "No trucks found matching your criteria."
                     }, void 0, false, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                        lineNumber: 615,
+                        lineNumber: 614,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                lineNumber: 613,
+                lineNumber: 612,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
-                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:620:6",
+                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:619:6",
                 "data-orchids-name": "Dialog",
                 open: isAddTruckOpen,
                 onOpenChange: setIsAddTruckOpen,
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogTrigger"], {
-                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:621:8",
+                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:620:8",
                         "data-orchids-name": "DialogTrigger",
                         asChild: true,
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:622:10",
+                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:621:10",
                             "data-orchids-name": "Button",
                             className: "fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg",
                             size: "lg",
                             children: "+"
                         }, void 0, false, {
                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                            lineNumber: 622,
+                            lineNumber: 621,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                        lineNumber: 621,
+                        lineNumber: 620,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogContent"], {
-                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:629:8",
+                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:628:8",
                         "data-orchids-name": "DialogContent",
                         className: "sm:max-w-md",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogHeader"], {
-                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:630:10",
+                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:629:10",
                                 "data-orchids-name": "DialogHeader",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogTitle"], {
-                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:631:12",
+                                    "data-orchids-id": "src\\components\\TruckManagementSection.tsx:630:12",
                                     "data-orchids-name": "DialogTitle",
                                     children: "Add New Truck"
                                 }, void 0, false, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                    lineNumber: 631,
+                                    lineNumber: 630,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                lineNumber: 630,
+                                lineNumber: 629,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:633:10",
+                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:632:10",
                                 "data-orchids-name": "div",
                                 className: "space-y-4",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:634:12",
+                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:633:12",
                                         "data-orchids-name": "div",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:635:14",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:634:14",
                                                 "data-orchids-name": "Label",
                                                 htmlFor: "truck_number",
                                                 children: "Truck Number *"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 635,
+                                                lineNumber: 634,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:636:14",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:635:14",
                                                 "data-orchids-name": "Input",
                                                 id: "truck_number",
                                                 value: addTruckForm.truckNumber,
@@ -1558,27 +1546,27 @@ function TruckManagementSection() {
                                                 required: true
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 636,
+                                                lineNumber: 635,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                        lineNumber: 634,
+                                        lineNumber: 633,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:644:12",
+                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:643:12",
                                         "data-orchids-name": "div",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:645:14",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:644:14",
                                                 "data-orchids-name": "Label",
                                                 htmlFor: "truck_type",
                                                 children: "Truck Type"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 645,
+                                                lineNumber: 644,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Select"], {
@@ -1589,30 +1577,40 @@ function TruckManagementSection() {
                                                         })),
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectTrigger"], {
-                                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:650:16",
+                                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:649:16",
                                                         "data-orchids-name": "SelectTrigger",
                                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectValue"], {
-                                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:651:18",
+                                                            "data-orchids-id": "src\\components\\TruckManagementSection.tsx:650:18",
                                                             "data-orchids-name": "SelectValue"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                            lineNumber: 651,
+                                                            lineNumber: 650,
                                                             columnNumber: 19
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                        lineNumber: 650,
+                                                        lineNumber: 649,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectContent"], {
-                                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:653:16",
+                                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:652:16",
                                                         "data-orchids-name": "SelectContent",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:654:18",
+                                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:653:18",
                                                                 "data-orchids-name": "SelectItem",
                                                                 value: "Standard",
                                                                 children: "Standard"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
+                                                                lineNumber: 653,
+                                                                columnNumber: 19
+                                                            }, this),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:654:18",
+                                                                "data-orchids-name": "SelectItem",
+                                                                value: "Electric",
+                                                                children: "Electric"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
                                                                 lineNumber: 654,
@@ -1621,57 +1619,47 @@ function TruckManagementSection() {
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
                                                                 "data-orchids-id": "src\\components\\TruckManagementSection.tsx:655:18",
                                                                 "data-orchids-name": "SelectItem",
-                                                                value: "Electric",
-                                                                children: "Electric"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                                lineNumber: 655,
-                                                                columnNumber: 19
-                                                            }, this),
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:656:18",
-                                                                "data-orchids-name": "SelectItem",
                                                                 value: "Heavy Duty",
                                                                 children: "Heavy Duty"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                                lineNumber: 656,
+                                                                lineNumber: 655,
                                                                 columnNumber: 19
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                        lineNumber: 653,
+                                                        lineNumber: 652,
                                                         columnNumber: 17
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 646,
+                                                lineNumber: 645,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                        lineNumber: 644,
+                                        lineNumber: 643,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:660:12",
+                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:659:12",
                                         "data-orchids-name": "div",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:661:14",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:660:14",
                                                 "data-orchids-name": "Label",
                                                 htmlFor: "capacity",
                                                 children: "Capacity (tons) *"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 661,
+                                                lineNumber: 660,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:662:14",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:661:14",
                                                 "data-orchids-name": "Input",
                                                 id: "capacity",
                                                 type: "number",
@@ -1685,31 +1673,31 @@ function TruckManagementSection() {
                                                 min: "1"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 662,
+                                                lineNumber: 661,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                        lineNumber: 660,
+                                        lineNumber: 659,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:672:12",
+                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:671:12",
                                         "data-orchids-name": "div",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:673:14",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:672:14",
                                                 "data-orchids-name": "Label",
                                                 htmlFor: "image_url",
                                                 children: "Image URL (optional)"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 673,
+                                                lineNumber: 672,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:674:14",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:673:14",
                                                 "data-orchids-name": "Input",
                                                 id: "image_url",
                                                 value: addTruckForm.imageUrl,
@@ -1720,36 +1708,36 @@ function TruckManagementSection() {
                                                 placeholder: "https://images.unsplash.com/..."
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 674,
+                                                lineNumber: 673,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                        lineNumber: 672,
+                                        lineNumber: 671,
                                         columnNumber: 13
                                     }, this),
                                     isUploading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:683:14",
+                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:682:14",
                                         "data-orchids-name": "div",
                                         className: "space-y-2",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:684:16",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:683:16",
                                                 "data-orchids-name": "div",
                                                 className: "flex items-center justify-between text-sm",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:685:18",
+                                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:684:18",
                                                         "data-orchids-name": "span",
                                                         children: "Adding truck..."
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                        lineNumber: 685,
+                                                        lineNumber: 684,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:686:18",
+                                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:685:18",
                                                         "data-orchids-name": "span",
                                                         children: [
                                                             uploadProgress,
@@ -1757,35 +1745,35 @@ function TruckManagementSection() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                        lineNumber: 686,
+                                                        lineNumber: 685,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 684,
+                                                lineNumber: 683,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$progress$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Progress"], {
                                                 value: uploadProgress
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 688,
+                                                lineNumber: 687,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                        lineNumber: 683,
+                                        lineNumber: 682,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:692:12",
+                                        "data-orchids-id": "src\\components\\TruckManagementSection.tsx:691:12",
                                         "data-orchids-name": "div",
                                         className: "flex space-x-2 pt-4",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:693:14@handleAddTruck",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:692:14@handleAddTruck",
                                                 "data-orchids-name": "Button",
                                                 onClick: handleAddTruck,
                                                 disabled: isUploading,
@@ -1793,11 +1781,11 @@ function TruckManagementSection() {
                                                 children: isUploading ? "Adding..." : "Add Truck"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 693,
+                                                lineNumber: 692,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:700:14",
+                                                "data-orchids-id": "src\\components\\TruckManagementSection.tsx:699:14",
                                                 "data-orchids-name": "Button",
                                                 variant: "outline",
                                                 onClick: ()=>setIsAddTruckOpen(false),
@@ -1805,31 +1793,31 @@ function TruckManagementSection() {
                                                 children: "Cancel"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                                lineNumber: 700,
+                                                lineNumber: 699,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                        lineNumber: 692,
+                                        lineNumber: 691,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                                lineNumber: 633,
+                                lineNumber: 632,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                        lineNumber: 629,
+                        lineNumber: 628,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx",
-                lineNumber: 620,
+                lineNumber: 619,
                 columnNumber: 7
             }, this)
         ]

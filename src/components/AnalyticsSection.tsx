@@ -415,15 +415,28 @@ export default function AnalyticsSection() {
             ) : data?.metrics && data.metrics.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={data.metrics} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="quantumGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={0.8}/>
+                      <stop offset="100%" stopColor="#dc2626" stopOpacity={0.6}/>
+                    </linearGradient>
+                    <linearGradient id="classicalGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f87171" stopOpacity={0.8}/>
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.6}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="date" 
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="#ef4444"
                     fontSize={12}
+                    tick={{ fill: '#ef4444' }}
                   />
                   <YAxis 
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="#ef4444"
                     fontSize={12}
+                    tick={{ fill: '#ef4444' }}
+                    tickFormatter={(value) => `${value}%`}
                   />
                   <Tooltip 
                     contentStyle={{
@@ -432,18 +445,19 @@ export default function AnalyticsSection() {
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))"
                     }}
+                    formatter={(value, name) => [`${value}%`, name]}
                   />
                   <Legend />
                   <Bar 
                     dataKey="quantumSavings" 
                     name="Quantum Routes"
-                    fill="hsl(var(--chart-1))"
+                    fill="url(#quantumGradient)"
                     radius={[2, 2, 0, 0]}
                   />
                   <Bar 
                     dataKey="classicalSavings" 
                     name="Classical Routes"
-                    fill="hsl(var(--chart-2))"
+                    fill="url(#classicalGradient)"
                     radius={[2, 2, 0, 0]}
                   />
                 </BarChart>
@@ -479,22 +493,39 @@ export default function AnalyticsSection() {
             ) : data?.metrics && data.metrics.length > 0 ? (
               <ResponsiveContainer width="100%" height={320}>
                 <ComposedChart data={data.metrics} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <defs>
+                    <linearGradient id="fuelEfficiencyGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={0.8}/>
+                      <stop offset="100%" stopColor="#dc2626" stopOpacity={0.6}/>
+                    </linearGradient>
+                    <linearGradient id="costSavingsGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#f87171" stopOpacity={0.8}/>
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.6}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="date" 
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="#ef4444"
                     fontSize={12}
+                    tick={{ fill: '#ef4444' }}
                   />
                   <YAxis 
                     yAxisId="left"
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="#ef4444"
                     fontSize={12}
+                    tick={{ fill: '#ef4444' }}
+                    tickFormatter={(value) => `${value}%`}
+                    label={{ value: 'Fuel Efficiency (%)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#ef4444' } }}
                   />
                   <YAxis 
                     yAxisId="right"
                     orientation="right"
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="#ef4444"
                     fontSize={12}
+                    tick={{ fill: '#ef4444' }}
+                    tickFormatter={(value) => `$${value}`}
+                    label={{ value: 'Cost Savings ($)', angle: 90, position: 'insideRight', style: { textAnchor: 'middle', fill: '#ef4444' } }}
                   />
                   <Tooltip 
                     contentStyle={{
@@ -503,13 +534,18 @@ export default function AnalyticsSection() {
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))"
                     }}
+                    formatter={(value, name) => {
+                      if (name === 'Fuel Efficiency (%)') return [`${value}%`, name];
+                      if (name === 'Cost Savings ($)') return [`$${value}`, name];
+                      return [value, name];
+                    }}
                   />
                   <Legend />
                   <Bar
                     yAxisId="left"
                     dataKey="fuelEfficiency"
                     name="Fuel Efficiency (%)"
-                    fill="hsl(var(--chart-3))"
+                    fill="url(#fuelEfficiencyGradient)"
                     radius={[2, 2, 0, 0]}
                   />
                   <Line
@@ -517,9 +553,9 @@ export default function AnalyticsSection() {
                     type="monotone"
                     dataKey="costSavings"
                     name="Cost Savings ($)"
-                    stroke="hsl(var(--chart-4))"
+                    stroke="#ef4444"
                     strokeWidth={3}
-                    dot={{ fill: "hsl(var(--chart-4))", strokeWidth: 2, r: 4 }}
+                    dot={{ fill: "#ef4444", strokeWidth: 2, r: 4 }}
                   />
                   <Brush 
                     dataKey="date" 

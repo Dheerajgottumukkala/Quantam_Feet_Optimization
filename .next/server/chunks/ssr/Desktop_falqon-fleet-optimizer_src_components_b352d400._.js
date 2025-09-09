@@ -927,6 +927,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2
 var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/node_modules/next/navigation.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/node_modules/sonner/dist/index.mjs [app-ssr] (ecmascript)");
 // Import actual components (using default imports)
+// test sample
 var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$DashboardSection$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/src/components/DashboardSection.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$TruckManagementSection$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/src/components/TruckManagementSection.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$AnalyticsSection$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Desktop/falqon-fleet-optimizer/src/components/AnalyticsSection.tsx [app-ssr] (ecmascript)");
@@ -976,47 +977,47 @@ const AppShell = ()=>{
         switch(activeSection){
             case 'dashboard':
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$DashboardSection$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["FleetDashboard"], {
-                    "data-orchids-id": "src\\components\\AppShell.tsx:40:15",
+                    "data-orchids-id": "src\\components\\AppShell.tsx:41:15",
                     "data-orchids-name": "FleetDashboard"
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                    lineNumber: 40,
+                    lineNumber: 41,
                     columnNumber: 16
                 }, this);
             case 'trucks':
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$TruckManagementSection$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                    "data-orchids-id": "src\\components\\AppShell.tsx:42:15",
+                    "data-orchids-id": "src\\components\\AppShell.tsx:43:15",
                     "data-orchids-name": "TruckManagementSection"
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                    lineNumber: 42,
+                    lineNumber: 43,
                     columnNumber: 16
                 }, this);
             case 'analytics':
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$AnalyticsSection$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                    "data-orchids-id": "src\\components\\AppShell.tsx:44:15",
+                    "data-orchids-id": "src\\components\\AppShell.tsx:45:15",
                     "data-orchids-name": "AnalyticsSection"
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                    lineNumber: 44,
+                    lineNumber: 45,
                     columnNumber: 16
                 }, this);
             case 'routing':
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$RoutePlanningSection$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                    "data-orchids-id": "src\\components\\AppShell.tsx:46:15",
+                    "data-orchids-id": "src\\components\\AppShell.tsx:47:15",
                     "data-orchids-name": "RoutePlanningSection"
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                    lineNumber: 46,
+                    lineNumber: 47,
                     columnNumber: 16
                 }, this);
             default:
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$DashboardSection$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["FleetDashboard"], {
-                    "data-orchids-id": "src\\components\\AppShell.tsx:48:15",
+                    "data-orchids-id": "src\\components\\AppShell.tsx:49:15",
                     "data-orchids-name": "FleetDashboard"
                 }, void 0, false, {
                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                    lineNumber: 48,
+                    lineNumber: 49,
                     columnNumber: 16
                 }, this);
         }
@@ -1033,177 +1034,177 @@ const AppShell = ()=>{
         }
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        "data-orchids-id": "src\\components\\AppShell.tsx:65:4",
+        "data-orchids-id": "src\\components\\AppShell.tsx:66:4",
         "data-orchids-name": "div",
         className: "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900",
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                "data-orchids-id": "src\\components\\AppShell.tsx:67:6",
+                "data-orchids-id": "src\\components\\AppShell.tsx:68:6",
                 "data-orchids-name": "div",
                 className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("fixed left-0 top-0 h-full bg-gradient-to-b from-slate-900/95 to-slate-800/95 border-r border-white/10 backdrop-blur-xl transition-all duration-300 z-50", sidebarCollapsed ? "w-16" : "w-64"),
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        "data-orchids-id": "src\\components\\AppShell.tsx:72:8",
+                        "data-orchids-id": "src\\components\\AppShell.tsx:73:8",
                         "data-orchids-name": "div",
                         className: "flex items-center justify-between p-4 border-b border-white/10",
                         children: [
                             !sidebarCollapsed && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                "data-orchids-id": "src\\components\\AppShell.tsx:74:12",
+                                "data-orchids-id": "src\\components\\AppShell.tsx:75:12",
                                 "data-orchids-name": "div",
                                 className: "flex items-center space-x-2",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\AppShell.tsx:75:14",
+                                        "data-orchids-id": "src\\components\\AppShell.tsx:76:14",
                                         "data-orchids-name": "div",
                                         className: "w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center",
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                            "data-orchids-id": "src\\components\\AppShell.tsx:76:16",
+                                            "data-orchids-id": "src\\components\\AppShell.tsx:77:16",
                                             "data-orchids-name": "span",
                                             className: "text-white font-bold text-sm",
                                             children: "F"
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                            lineNumber: 76,
+                                            lineNumber: 77,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                        lineNumber: 75,
+                                        lineNumber: 76,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        "data-orchids-id": "src\\components\\AppShell.tsx:78:14",
+                                        "data-orchids-id": "src\\components\\AppShell.tsx:79:14",
                                         "data-orchids-name": "span",
                                         className: "text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent",
                                         children: "FALQON"
                                     }, void 0, false, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                        lineNumber: 78,
+                                        lineNumber: 79,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                lineNumber: 74,
+                                lineNumber: 75,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                "data-orchids-id": "src\\components\\AppShell.tsx:83:10",
+                                "data-orchids-id": "src\\components\\AppShell.tsx:84:10",
                                 "data-orchids-name": "Button",
                                 variant: "ghost",
                                 size: "sm",
                                 onClick: ()=>setSidebarCollapsed(!sidebarCollapsed),
                                 className: "text-gray-400 hover:text-white hover:bg-white/10",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$menu$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Menu$3e$__["Menu"], {
-                                    "data-orchids-id": "src\\components\\AppShell.tsx:89:12",
+                                    "data-orchids-id": "src\\components\\AppShell.tsx:90:12",
                                     "data-orchids-name": "Menu",
                                     className: "h-4 w-4"
                                 }, void 0, false, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                    lineNumber: 89,
+                                    lineNumber: 90,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                lineNumber: 83,
+                                lineNumber: 84,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                        lineNumber: 72,
+                        lineNumber: 73,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("nav", {
-                        "data-orchids-id": "src\\components\\AppShell.tsx:94:8",
+                        "data-orchids-id": "src\\components\\AppShell.tsx:95:8",
                         "data-orchids-name": "nav",
                         className: "p-4 space-y-2",
                         children: navigationItems.map((item)=>{
                             const Icon = item.icon;
                             const isActive = activeSection === item.id;
                             return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                                "data-orchids-id": "src\\components\\AppShell.tsx:100:14@navigationItems",
+                                "data-orchids-id": "src\\components\\AppShell.tsx:101:14@navigationItems",
                                 "data-orchids-name": "button",
                                 onClick: ()=>setActiveSection(item.id),
                                 className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200", isActive ? "bg-gradient-to-r from-blue-500/20 to-purple-600/20 border border-blue-500/30 text-white shadow-lg shadow-blue-500/10" : "text-gray-300 hover:text-white hover:bg-white/10"),
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(Icon, {
-                                        "data-orchids-id": "src\\components\\AppShell.tsx:110:16@navigationItems",
+                                        "data-orchids-id": "src\\components\\AppShell.tsx:111:16@navigationItems",
                                         "data-orchids-name": "Icon",
                                         className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("h-5 w-5 flex-shrink-0", isActive ? "text-blue-400" : "text-gray-400")
                                     }, void 0, false, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                        lineNumber: 110,
+                                        lineNumber: 111,
                                         columnNumber: 17
                                     }, this),
                                     !sidebarCollapsed && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        "data-orchids-id": "src\\components\\AppShell.tsx:115:18@navigationItems",
+                                        "data-orchids-id": "src\\components\\AppShell.tsx:116:18@navigationItems",
                                         "data-orchids-name": "span",
                                         className: "font-medium",
                                         children: item.label
                                     }, void 0, false, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                        lineNumber: 115,
+                                        lineNumber: 116,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, item.id, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                lineNumber: 100,
+                                lineNumber: 101,
                                 columnNumber: 15
                             }, this);
                         })
                     }, void 0, false, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                        lineNumber: 94,
+                        lineNumber: 95,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                lineNumber: 67,
+                lineNumber: 68,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                "data-orchids-id": "src\\components\\AppShell.tsx:124:6",
+                "data-orchids-id": "src\\components\\AppShell.tsx:125:6",
                 "data-orchids-name": "div",
                 className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("transition-all duration-300", sidebarCollapsed ? "ml-16" : "ml-64"),
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
-                        "data-orchids-id": "src\\components\\AppShell.tsx:129:8",
+                        "data-orchids-id": "src\\components\\AppShell.tsx:130:8",
                         "data-orchids-name": "header",
                         className: "bg-gradient-to-r from-slate-900/95 to-slate-800/95 border-b border-white/10 backdrop-blur-xl sticky top-0 z-40",
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            "data-orchids-id": "src\\components\\AppShell.tsx:130:10",
+                            "data-orchids-id": "src\\components\\AppShell.tsx:131:10",
                             "data-orchids-name": "div",
                             className: "flex items-center justify-between px-6 py-4",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    "data-orchids-id": "src\\components\\AppShell.tsx:131:12",
+                                    "data-orchids-id": "src\\components\\AppShell.tsx:132:12",
                                     "data-orchids-name": "div",
                                     className: "flex items-center space-x-4",
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                        "data-orchids-id": "src\\components\\AppShell.tsx:132:14",
+                                        "data-orchids-id": "src\\components\\AppShell.tsx:133:14",
                                         "data-orchids-name": "h1",
                                         className: "text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent",
                                         children: "FALQON"
                                     }, void 0, false, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                        lineNumber: 132,
+                                        lineNumber: 133,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                    lineNumber: 131,
+                                    lineNumber: 132,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    "data-orchids-id": "src\\components\\AppShell.tsx:137:12",
+                                    "data-orchids-id": "src\\components\\AppShell.tsx:138:12",
                                     "data-orchids-name": "div",
                                     className: "flex items-center space-x-4",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                            "data-orchids-id": "src\\components\\AppShell.tsx:139:14",
+                                            "data-orchids-id": "src\\components\\AppShell.tsx:140:14",
                                             "data-orchids-name": "Button",
                                             onClick: ()=>setActiveSection('routing'),
                                             variant: "outline",
@@ -1211,164 +1212,164 @@ const AppShell = ()=>{
                                             className: "bg-gradient-to-r from-blue-500/20 to-purple-600/20 border-blue-500/30 text-white hover:from-blue-500/30 hover:to-purple-600/30 hover:border-blue-400/50 transition-all duration-200",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$route$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Route$3e$__["Route"], {
-                                                    "data-orchids-id": "src\\components\\AppShell.tsx:145:16",
+                                                    "data-orchids-id": "src\\components\\AppShell.tsx:146:16",
                                                     "data-orchids-name": "Route",
                                                     className: "h-4 w-4 mr-2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                    lineNumber: 145,
+                                                    lineNumber: 146,
                                                     columnNumber: 17
                                                 }, this),
                                                 "Route Planning"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                            lineNumber: 139,
+                                            lineNumber: 140,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenu"], {
-                                            "data-orchids-id": "src\\components\\AppShell.tsx:150:14",
+                                            "data-orchids-id": "src\\components\\AppShell.tsx:151:14",
                                             "data-orchids-name": "DropdownMenu",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuTrigger"], {
-                                                    "data-orchids-id": "src\\components\\AppShell.tsx:151:16",
+                                                    "data-orchids-id": "src\\components\\AppShell.tsx:152:16",
                                                     "data-orchids-name": "DropdownMenuTrigger",
                                                     asChild: true,
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                                        "data-orchids-id": "src\\components\\AppShell.tsx:152:18",
+                                                        "data-orchids-id": "src\\components\\AppShell.tsx:153:18",
                                                         "data-orchids-name": "Button",
                                                         variant: "ghost",
                                                         size: "sm",
                                                         className: "text-gray-300 hover:text-white hover:bg-white/10",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$user$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__User$3e$__["User"], {
-                                                                "data-orchids-id": "src\\components\\AppShell.tsx:157:20",
+                                                                "data-orchids-id": "src\\components\\AppShell.tsx:158:20",
                                                                 "data-orchids-name": "User",
                                                                 className: "h-4 w-4 mr-2"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                                lineNumber: 157,
+                                                                lineNumber: 158,
                                                                 columnNumber: 21
                                                             }, this),
                                                             "Profile"
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                        lineNumber: 152,
+                                                        lineNumber: 153,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                    lineNumber: 151,
+                                                    lineNumber: 152,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuContent"], {
-                                                    "data-orchids-id": "src\\components\\AppShell.tsx:161:16",
+                                                    "data-orchids-id": "src\\components\\AppShell.tsx:162:16",
                                                     "data-orchids-name": "DropdownMenuContent",
                                                     align: "end",
                                                     className: "bg-slate-800/95 border-white/10 backdrop-blur-xl",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuItem"], {
-                                                            "data-orchids-id": "src\\components\\AppShell.tsx:165:18",
+                                                            "data-orchids-id": "src\\components\\AppShell.tsx:166:18",
                                                             "data-orchids-name": "DropdownMenuItem",
                                                             className: "text-gray-300 hover:text-white hover:bg-white/10",
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$user$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__User$3e$__["User"], {
-                                                                    "data-orchids-id": "src\\components\\AppShell.tsx:166:20",
+                                                                    "data-orchids-id": "src\\components\\AppShell.tsx:167:20",
                                                                     "data-orchids-name": "User",
                                                                     className: "h-4 w-4 mr-2"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                                    lineNumber: 166,
+                                                                    lineNumber: 167,
                                                                     columnNumber: 21
                                                                 }, this),
                                                                 "Account Settings"
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                            lineNumber: 165,
+                                                            lineNumber: 166,
                                                             columnNumber: 19
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuSeparator"], {
-                                                            "data-orchids-id": "src\\components\\AppShell.tsx:169:18",
+                                                            "data-orchids-id": "src\\components\\AppShell.tsx:170:18",
                                                             "data-orchids-name": "DropdownMenuSeparator",
                                                             className: "bg-white/10"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                            lineNumber: 169,
+                                                            lineNumber: 170,
                                                             columnNumber: 19
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuItem"], {
-                                                            "data-orchids-id": "src\\components\\AppShell.tsx:170:18@handleLogout",
+                                                            "data-orchids-id": "src\\components\\AppShell.tsx:171:18@handleLogout",
                                                             "data-orchids-name": "DropdownMenuItem",
                                                             onClick: handleLogout,
                                                             className: "text-red-400 hover:text-red-300 hover:bg-red-500/10",
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$log$2d$out$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__LogOut$3e$__["LogOut"], {
-                                                                    "data-orchids-id": "src\\components\\AppShell.tsx:174:20",
+                                                                    "data-orchids-id": "src\\components\\AppShell.tsx:175:20",
                                                                     "data-orchids-name": "LogOut",
                                                                     className: "h-4 w-4 mr-2"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                                    lineNumber: 174,
+                                                                    lineNumber: 175,
                                                                     columnNumber: 21
                                                                 }, this),
                                                                 "Logout"
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                            lineNumber: 170,
+                                                            lineNumber: 171,
                                                             columnNumber: 19
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                                    lineNumber: 161,
+                                                    lineNumber: 162,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                            lineNumber: 150,
+                                            lineNumber: 151,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                                    lineNumber: 137,
+                                    lineNumber: 138,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                            lineNumber: 130,
+                            lineNumber: 131,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                        lineNumber: 129,
+                        lineNumber: 130,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
-                        "data-orchids-id": "src\\components\\AppShell.tsx:184:8",
+                        "data-orchids-id": "src\\components\\AppShell.tsx:185:8",
                         "data-orchids-name": "main",
                         className: "min-h-[calc(100vh-80px)] transition-all duration-300",
                         children: renderActiveSection()
                     }, void 0, false, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                        lineNumber: 184,
+                        lineNumber: 185,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-                lineNumber: 124,
+                lineNumber: 125,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/AppShell.tsx",
-        lineNumber: 65,
+        lineNumber: 66,
         columnNumber: 5
     }, this);
 };

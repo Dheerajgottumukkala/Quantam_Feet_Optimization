@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import GoogleMapComponent from '@/components/GoogleMapComponent';
+import LeafletRouteMap from '@/components/LeafletRouteMap';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
@@ -324,7 +324,7 @@ export const FleetDashboard = () => {
               <div>
                 <p className="text-green-200 text-sm font-medium">ROI This Month</p>
                 <p className="text-3xl font-bold text-white mt-1">
-                  ${dashboardData?.roi.toLocaleString() || 0}
+                  ₹{dashboardData?.roi.toLocaleString() || 0}
                 </p>
                 <p className="text-green-300 text-xs mt-1">Quantum optimization savings</p>
               </div>
@@ -347,7 +347,7 @@ export const FleetDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <GoogleMapComponent pythonData={pythonData} className="" />
+            <LeafletRouteMap pythonData={pythonData} className="" />
           </CardContent>
         </Card>
 

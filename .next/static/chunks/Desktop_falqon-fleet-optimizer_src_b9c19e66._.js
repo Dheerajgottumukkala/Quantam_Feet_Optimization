@@ -110,7 +110,10 @@ const API_CONFIG = {
     googleMaps: {
         apiKey: GOOGLE_MAPS_API_KEY,
         libraries: [
-            'geometry'
+            'geometry',
+            'places',
+            'routes',
+            'directions'
         ],
         version: 'weekly'
     }

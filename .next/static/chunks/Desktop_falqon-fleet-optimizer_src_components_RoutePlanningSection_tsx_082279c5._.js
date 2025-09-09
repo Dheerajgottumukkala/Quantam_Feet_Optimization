@@ -75,6 +75,7 @@ function RoutePlanningSection() {
     const mapRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const [map, setMap] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [isMapLoaded, setIsMapLoaded] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [mapType, setMapType] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("roadmap");
     // Geocoded coordinates from Python output
     const geocodedPoints = {
         "Vishnu Institute of Technology, Bhimavaram": {
@@ -147,7 +148,22 @@ function RoutePlanningSection() {
                             lat: 16.5659605,
                             lng: 81.5225313
                         },
-                        mapTypeId: window.google.maps.MapTypeId.SATELLITE
+                        mapTypeId: mapType === "roadmap" ? window.google.maps.MapTypeId.ROADMAP : window.google.maps.MapTypeId.SATELLITE,
+                        mapTypeControl: true,
+                        streetViewControl: false,
+                        fullscreenControl: true,
+                        zoomControl: true,
+                        styles: [
+                            {
+                                featureType: "poi",
+                                elementType: "labels",
+                                stylers: [
+                                    {
+                                        visibility: "off"
+                                    }
+                                ]
+                            }
+                        ]
                     });
                     setMap(mapInstance);
                     setIsMapLoaded(true);
@@ -164,7 +180,7 @@ function RoutePlanningSection() {
                         return;
                     }
                     const script = document.createElement('script');
-                    script.src = `https://maps.googleapis.com/maps/api/js?key=${__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$lib$2f$config$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["GOOGLE_MAPS_API_KEY"]}&libraries=geometry&callback=initMap`;
+                    script.src = `https://maps.googleapis.com/maps/api/js?key=${__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$lib$2f$config$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["GOOGLE_MAPS_API_KEY"]}&libraries=geometry,directions&callback=initMap`;
                     script.async = true;
                     script.defer = true;
                     window.initMap = initializeMap;
@@ -185,7 +201,19 @@ function RoutePlanningSection() {
         map,
         pythonData
     ]);
+    // Update map type when mapType state changes
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "RoutePlanningSection.useEffect": ()=>{
+            if (map) {
+                map.setMapTypeId(mapType === "roadmap" ? window.google.maps.MapTypeId.ROADMAP : window.google.maps.MapTypeId.SATELLITE);
+            }
+        }
+    }["RoutePlanningSection.useEffect"], [
+        map,
+        mapType
+    ]);
     const addRouteMarkers = (mapInstance, route)=>{
+        // First, add all markers
         route.forEach((location, index)=>{
             const coords = geocodedPoints[location];
             if (!coords) return;
@@ -219,18 +247,113 @@ function RoutePlanningSection() {
                 infoWindow.open(mapInstance, marker);
             });
         });
-        // Draw route line
-        const routeCoordinates = route.map((location)=>geocodedPoints[location]).filter(Boolean);
-        if (routeCoordinates.length > 1) {
-            new window.google.maps.Polyline({
-                path: routeCoordinates,
-                geodesic: true,
-                strokeColor: '#FF6B35',
-                strokeOpacity: 0.9,
-                strokeWeight: 4,
-                map: mapInstance
+        // Draw route using Google Directions API to follow roads
+        if (route.length >= 2) {
+            const directionsService = new window.google.maps.DirectionsService();
+            const directionsRenderer = new window.google.maps.DirectionsRenderer({
+                draggable: false,
+                suppressMarkers: true,
+                polylineOptions: {
+                    strokeColor: '#FF6B35',
+                    strokeWeight: 6,
+                    strokeOpacity: 0.9
+                }
+            });
+            directionsRenderer.setMap(mapInstance);
+            // Prepare waypoints (all locations except first and last)
+            const waypoints = route.slice(1, -1).map((location)=>{
+                const coords = geocodedPoints[location];
+                return coords ? {
+                    location: coords
+                } : null;
+            }).filter(Boolean);
+            const request = {
+                origin: geocodedPoints[route[0]],
+                destination: geocodedPoints[route[route.length - 1]],
+                waypoints: waypoints,
+                travelMode: window.google.maps.TravelMode.DRIVING,
+                optimizeWaypoints: false // Keep the order as provided
+            };
+            directionsService.route(request, (result, status)=>{
+                console.log('Directions request status:', status);
+                console.log('Directions request result:', result);
+                if (status === window.google.maps.DirectionsStatus.OK) {
+                    console.log('Setting directions on renderer');
+                    directionsRenderer.setDirections(result);
+                } else {
+                    console.error('Directions request failed:', status);
+                    console.log('Falling back to segment-by-segment routing');
+                    // Fallback: draw segment by segment to ensure road following
+                    drawRouteBySegments(mapInstance, route);
+                    // Additional fallback: draw a simple polyline if directions completely fail
+                    setTimeout(()=>{
+                        console.log('Drawing fallback polyline');
+                        const routeCoordinates = route.map((location)=>geocodedPoints[location]).filter(Boolean);
+                        if (routeCoordinates.length > 1) {
+                            new window.google.maps.Polyline({
+                                path: routeCoordinates,
+                                geodesic: true,
+                                strokeColor: '#FF6B35',
+                                strokeOpacity: 0.9,
+                                strokeWeight: 4,
+                                map: mapInstance
+                            });
+                        }
+                    }, 2000);
+                }
             });
         }
+    };
+    const drawRouteBySegments = (mapInstance, route)=>{
+        const directionsService = new window.google.maps.DirectionsService();
+        const directionsRenderer = new window.google.maps.DirectionsRenderer({
+            draggable: false,
+            suppressMarkers: true,
+            polylineOptions: {
+                strokeColor: '#FF6B35',
+                strokeWeight: 6,
+                strokeOpacity: 0.9
+            }
+        });
+        directionsRenderer.setMap(mapInstance);
+        // Draw route segment by segment to ensure road following
+        const drawNextSegment = (index)=>{
+            if (index >= route.length - 1) return;
+            const origin = geocodedPoints[route[index]];
+            const destination = geocodedPoints[route[index + 1]];
+            if (!origin || !destination) {
+                drawNextSegment(index + 1);
+                return;
+            }
+            const request = {
+                origin: origin,
+                destination: destination,
+                travelMode: window.google.maps.TravelMode.DRIVING
+            };
+            directionsService.route(request, (result, status)=>{
+                console.log(`Segment ${index + 1} to ${index + 2} status:`, status);
+                if (status === window.google.maps.DirectionsStatus.OK) {
+                    console.log(`Drawing segment ${index + 1} to ${index + 2}`);
+                    // Create a new directions renderer for this segment
+                    const segmentRenderer = new window.google.maps.DirectionsRenderer({
+                        draggable: false,
+                        suppressMarkers: true,
+                        polylineOptions: {
+                            strokeColor: '#FF6B35',
+                            strokeWeight: 6,
+                            strokeOpacity: 0.9
+                        }
+                    });
+                    segmentRenderer.setMap(mapInstance);
+                    segmentRenderer.setDirections(result);
+                } else {
+                    console.error(`Failed to get directions for segment ${index + 1} to ${index + 2}:`, status);
+                }
+                // Continue to next segment
+                drawNextSegment(index + 1);
+            });
+        };
+        drawNextSegment(0);
     };
     const totalCapacity = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "RoutePlanningSection.useMemo[totalCapacity]": ()=>{
@@ -660,145 +783,145 @@ function RoutePlanningSection() {
         high: "bg-red-500/20 text-red-400"
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:584:4",
+        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:712:4",
         "data-orchids-name": "div",
         className: "h-full flex flex-col lg:flex-row gap-6",
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:586:6",
+                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:714:6",
                 "data-orchids-name": "div",
                 className: "w-full lg:w-2/5 space-y-6 overflow-y-auto",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
-                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:588:8",
+                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:716:8",
                         "data-orchids-name": "Card",
                         className: "bg-card border-border",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardHeader"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:589:10",
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:717:10",
                                 "data-orchids-name": "CardHeader",
                                 className: "pb-4",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardTitle"], {
-                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:590:12",
+                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:718:12",
                                     "data-orchids-name": "CardTitle",
                                     className: "flex items-center gap-2 text-card-foreground",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$truck$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Truck$3e$__["Truck"], {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:591:14",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:719:14",
                                             "data-orchids-name": "Truck",
                                             className: "h-5 w-5 text-primary"
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 591,
+                                            lineNumber: 719,
                                             columnNumber: 15
                                         }, this),
                                         "Select Trucks"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                    lineNumber: 590,
+                                    lineNumber: 718,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 589,
+                                lineNumber: 717,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:595:10",
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:723:10",
                                 "data-orchids-name": "CardContent",
                                 className: "space-y-4",
                                 children: [
                                     loadingTrucks ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:597:14",
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:725:14",
                                         "data-orchids-name": "div",
                                         className: "flex items-center justify-center py-8",
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:598:16",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:726:16",
                                             "data-orchids-name": "div",
                                             className: "animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 598,
+                                            lineNumber: 726,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 597,
+                                        lineNumber: 725,
                                         columnNumber: 15
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:601:14",
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:729:14",
                                         "data-orchids-name": "div",
                                         className: "space-y-3",
                                         children: [
                                             availableTrucks.map((truck)=>{
                                                 const isSelected = selectedTrucks.some((t)=>t.id === truck.id);
                                                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:605:20@availableTrucks",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:733:20@availableTrucks",
                                                     "data-orchids-name": "div",
                                                     className: `flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`,
                                                     onClick: ()=>handleTruckSelection(truck, !isSelected),
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:612:22@availableTrucks@isSelected",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:740:22@availableTrucks@isSelected",
                                                             "data-orchids-name": "Checkbox",
                                                             checked: isSelected,
                                                             onChange: ()=>{}
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 612,
+                                                            lineNumber: 740,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:616:22@availableTrucks",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:744:22@availableTrucks",
                                                             "data-orchids-name": "img",
                                                             src: truck.imageUrl || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=250&fit=crop",
                                                             alt: truck.truckNumber,
                                                             className: "w-12 h-8 object-cover rounded"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 616,
+                                                            lineNumber: 744,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:621:22@availableTrucks",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:749:22@availableTrucks",
                                                             "data-orchids-name": "div",
                                                             className: "flex-1",
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:622:24@availableTrucks",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:750:24@availableTrucks",
                                                                     "data-orchids-name": "div",
                                                                     className: "flex items-center gap-2",
                                                                     children: [
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:623:26@availableTrucks",
+                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:751:26@availableTrucks",
                                                                             "data-orchids-name": "span",
                                                                             className: "font-medium",
                                                                             children: truck.truckNumber
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                            lineNumber: 623,
+                                                                            lineNumber: 751,
                                                                             columnNumber: 27
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
-                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:624:26@availableTrucks",
+                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:752:26@availableTrucks",
                                                                             "data-orchids-name": "Badge",
                                                                             variant: "secondary",
                                                                             className: "text-xs",
                                                                             children: truck.truckType
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                            lineNumber: 624,
+                                                                            lineNumber: 752,
                                                                             columnNumber: 27
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 622,
+                                                                    lineNumber: 750,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:628:24@availableTrucks",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:756:24@availableTrucks",
                                                                     "data-orchids-name": "p",
                                                                     className: "text-sm text-muted-foreground",
                                                                     children: [
@@ -808,91 +931,91 @@ function RoutePlanningSection() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 628,
+                                                                    lineNumber: 756,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 621,
+                                                            lineNumber: 749,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, truck.id, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 605,
+                                                    lineNumber: 733,
                                                     columnNumber: 21
                                                 }, this);
                                             }),
                                             availableTrucks.length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:637:18",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:765:18",
                                                 "data-orchids-name": "div",
                                                 className: "text-center py-8",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$truck$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Truck$3e$__["Truck"], {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:638:20",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:766:20",
                                                         "data-orchids-name": "Truck",
                                                         className: "w-12 h-12 mx-auto text-muted-foreground mb-2"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 638,
+                                                        lineNumber: 766,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:639:20",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:767:20",
                                                         "data-orchids-name": "p",
                                                         className: "text-muted-foreground",
                                                         children: "No available trucks found"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 639,
+                                                        lineNumber: 767,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 637,
+                                                lineNumber: 765,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 601,
+                                        lineNumber: 729,
                                         columnNumber: 15
                                     }, this),
                                     errors.trucks && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:646:14",
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:774:14",
                                         "data-orchids-name": "p",
                                         className: "text-sm text-destructive flex items-center gap-1",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:647:16",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:775:16",
                                                 "data-orchids-name": "AlertCircle",
                                                 className: "h-3 w-3"
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 647,
+                                                lineNumber: 775,
                                                 columnNumber: 17
                                             }, this),
                                             errors.trucks
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 646,
+                                        lineNumber: 774,
                                         columnNumber: 15
                                     }, this),
                                     selectedTrucks.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:654:14",
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:782:14",
                                         "data-orchids-name": "div",
                                         className: "p-3 bg-muted rounded-lg",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:655:16",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:783:16",
                                                 "data-orchids-name": "div",
                                                 className: "flex items-center justify-between mb-2",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:656:18",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:784:18",
                                                         "data-orchids-name": "span",
                                                         className: "text-sm font-medium text-muted-foreground",
                                                         children: [
@@ -902,11 +1025,11 @@ function RoutePlanningSection() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 656,
+                                                        lineNumber: 784,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:659:18",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:787:18",
                                                         "data-orchids-name": "span",
                                                         className: "text-sm font-medium",
                                                         children: [
@@ -916,68 +1039,68 @@ function RoutePlanningSection() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 659,
+                                                        lineNumber: 787,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 655,
+                                                lineNumber: 783,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:663:16",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:791:16",
                                                 "data-orchids-name": "div",
                                                 className: "flex flex-wrap gap-1",
                                                 children: selectedTrucks.map((truck)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:665:20@selectedTrucks",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:793:20@selectedTrucks",
                                                         "data-orchids-name": "Badge",
                                                         variant: "secondary",
                                                         className: "text-xs",
                                                         children: truck.truckNumber
                                                     }, truck.id, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 665,
+                                                        lineNumber: 793,
                                                         columnNumber: 21
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 663,
+                                                lineNumber: 791,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 654,
+                                        lineNumber: 782,
                                         columnNumber: 15
                                     }, this),
                                     selectedTrucks.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:675:14",
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:803:14",
                                         "data-orchids-name": "div",
                                         className: "p-3 bg-muted rounded-lg",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:676:16",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:804:16",
                                                 "data-orchids-name": "div",
                                                 className: "flex items-center justify-between",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:677:18",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:805:18",
                                                         "data-orchids-name": "span",
                                                         className: "text-sm font-medium text-muted-foreground",
                                                         children: "Load vs Capacity"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 677,
+                                                        lineNumber: 805,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:678:18",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:806:18",
                                                         "data-orchids-name": "div",
                                                         className: "flex items-center gap-2",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:679:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:807:20",
                                                                 "data-orchids-name": "span",
                                                                 className: `text-sm font-medium ${isOverCapacity ? 'text-destructive' : 'text-card-foreground'}`,
                                                                 children: [
@@ -988,36 +1111,36 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 679,
+                                                                lineNumber: 807,
                                                                 columnNumber: 21
                                                             }, this),
                                                             isOverCapacity && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:682:39",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:810:39",
                                                                 "data-orchids-name": "AlertCircle",
                                                                 className: "h-4 w-4 text-destructive"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 682,
+                                                                lineNumber: 810,
                                                                 columnNumber: 40
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 678,
+                                                        lineNumber: 806,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 676,
+                                                lineNumber: 804,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:685:16",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:813:16",
                                                 "data-orchids-name": "div",
                                                 className: "mt-2 h-2 bg-background rounded-full overflow-hidden",
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:686:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:814:18",
                                                     "data-orchids-name": "div",
                                                     className: `h-full transition-all duration-300 ${isOverCapacity ? 'bg-destructive' : 'bg-primary'}`,
                                                     style: {
@@ -1025,90 +1148,90 @@ function RoutePlanningSection() {
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 686,
+                                                    lineNumber: 814,
                                                     columnNumber: 19
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 685,
+                                                lineNumber: 813,
                                                 columnNumber: 17
                                             }, this),
                                             errors.capacity && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:694:18",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:822:18",
                                                 "data-orchids-name": "p",
                                                 className: "text-sm text-destructive flex items-center gap-1 mt-2",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:695:20",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:823:20",
                                                         "data-orchids-name": "AlertCircle",
                                                         className: "h-3 w-3"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 695,
+                                                        lineNumber: 823,
                                                         columnNumber: 21
                                                     }, this),
                                                     errors.capacity
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 694,
+                                                lineNumber: 822,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 675,
+                                        lineNumber: 803,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 595,
+                                lineNumber: 723,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                        lineNumber: 588,
+                        lineNumber: 716,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
-                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:705:8",
+                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:833:8",
                         "data-orchids-name": "Card",
                         className: "bg-card border-border",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardHeader"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:706:10",
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:834:10",
                                 "data-orchids-name": "CardHeader",
                                 className: "pb-4",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:707:12",
+                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:835:12",
                                     "data-orchids-name": "div",
                                     className: "flex items-center justify-between",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardTitle"], {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:708:14",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:836:14",
                                             "data-orchids-name": "CardTitle",
                                             className: "flex items-center gap-2 text-card-foreground",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$map$2d$pin$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__MapPin$3e$__["MapPin"], {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:709:16",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:837:16",
                                                     "data-orchids-name": "MapPin",
                                                     className: "h-5 w-5 text-primary"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 709,
+                                                    lineNumber: 837,
                                                     columnNumber: 17
                                                 }, this),
                                                 "Pickup Locations"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 708,
+                                            lineNumber: 836,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:712:14@addPickupLocation",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:840:14@addPickupLocation",
                                             "data-orchids-name": "Button",
                                             onClick: addPickupLocation,
                                             size: "sm",
@@ -1116,51 +1239,51 @@ function RoutePlanningSection() {
                                             className: "flex items-center gap-1",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:718:16",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:846:16",
                                                     "data-orchids-name": "Plus",
                                                     className: "h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 718,
+                                                    lineNumber: 846,
                                                     columnNumber: 17
                                                 }, this),
                                                 "Add Location"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 712,
+                                            lineNumber: 840,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                    lineNumber: 707,
+                                    lineNumber: 835,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 706,
+                                lineNumber: 834,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:723:10",
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:851:10",
                                 "data-orchids-name": "CardContent",
                                 className: "space-y-4",
                                 children: pickupLocations.map((location, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         "data-map-index": index,
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:725:14@pickupLocations",
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:853:14@pickupLocations",
                                         "data-orchids-name": "div",
                                         className: "p-4 border border-border rounded-lg space-y-4",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 "data-map-index": index,
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:726:16@pickupLocations",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:854:16@pickupLocations",
                                                 "data-orchids-name": "div",
                                                 className: "flex items-center justify-between",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
                                                         "data-map-index": index,
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:727:18@pickupLocations",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:855:18@pickupLocations",
                                                         "data-orchids-name": "h4",
                                                         className: "font-medium text-card-foreground",
                                                         children: [
@@ -1169,12 +1292,12 @@ function RoutePlanningSection() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 727,
+                                                        lineNumber: 855,
                                                         columnNumber: 19
                                                     }, this),
                                                     pickupLocations.length > 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                                         "data-map-index": index,
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:729:20@pickupLocations",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:857:20@pickupLocations",
                                                         "data-orchids-name": "Button",
                                                         onClick: ()=>removePickupLocation(location.id),
                                                         size: "sm",
@@ -1182,51 +1305,51 @@ function RoutePlanningSection() {
                                                         className: "h-8 w-8 p-0 text-muted-foreground hover:text-destructive",
                                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__["X"], {
                                                             "data-map-index": index,
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:735:22@pickupLocations",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:863:22@pickupLocations",
                                                             "data-orchids-name": "X",
                                                             className: "h-4 w-4"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 735,
+                                                            lineNumber: 863,
                                                             columnNumber: 23
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 729,
+                                                        lineNumber: 857,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 726,
+                                                lineNumber: 854,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 "data-map-index": index,
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:740:16@pickupLocations",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:868:16@pickupLocations",
                                                 "data-orchids-name": "div",
                                                 className: "space-y-3",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                         "data-map-index": index,
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:741:18@pickupLocations",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:869:18@pickupLocations",
                                                         "data-orchids-name": "div",
                                                         className: "space-y-2",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:742:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:870:20@pickupLocations",
                                                                 "data-orchids-name": "Label",
                                                                 className: "text-sm font-medium text-card-foreground",
                                                                 children: "Source Location *"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 742,
+                                                                lineNumber: 870,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:745:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:873:20@pickupLocations",
                                                                 "data-orchids-name": "Input",
                                                                 placeholder: "Enter address or location",
                                                                 value: location.address,
@@ -1236,58 +1359,58 @@ function RoutePlanningSection() {
                                                                 className: errors[`address_${location.id}`] ? "border-destructive" : ""
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 745,
+                                                                lineNumber: 873,
                                                                 columnNumber: 21
                                                             }, this),
                                                             errors[`address_${location.id}`] && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:752:22@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:880:22@pickupLocations",
                                                                 "data-orchids-name": "p",
                                                                 className: "text-sm text-destructive flex items-center gap-1",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:753:24@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:881:24@pickupLocations",
                                                                         "data-orchids-name": "AlertCircle",
                                                                         className: "h-3 w-3"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 753,
+                                                                        lineNumber: 881,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     errors[`address_${location.id}`]
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 752,
+                                                                lineNumber: 880,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 741,
+                                                        lineNumber: 869,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                         "data-map-index": index,
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:759:18@pickupLocations",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:887:18@pickupLocations",
                                                         "data-orchids-name": "div",
                                                         className: "space-y-2",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:760:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:888:20@pickupLocations",
                                                                 "data-orchids-name": "Label",
                                                                 className: "text-sm font-medium text-card-foreground",
                                                                 children: "Destination Location *"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 760,
+                                                                lineNumber: 888,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:763:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:891:20@pickupLocations",
                                                                 "data-orchids-name": "Input",
                                                                 placeholder: "Enter destination address",
                                                                 value: location.destinationAddress,
@@ -1297,64 +1420,64 @@ function RoutePlanningSection() {
                                                                 className: errors[`destinationAddress_${location.id}`] ? "border-destructive" : ""
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 763,
+                                                                lineNumber: 891,
                                                                 columnNumber: 21
                                                             }, this),
                                                             errors[`destinationAddress_${location.id}`] && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:770:22@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:898:22@pickupLocations",
                                                                 "data-orchids-name": "p",
                                                                 className: "text-sm text-destructive flex items-center gap-1",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:771:24@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:899:24@pickupLocations",
                                                                         "data-orchids-name": "AlertCircle",
                                                                         className: "h-3 w-3"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 771,
+                                                                        lineNumber: 899,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     errors[`destinationAddress_${location.id}`]
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 770,
+                                                                lineNumber: 898,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 759,
+                                                        lineNumber: 887,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                         "data-map-index": index,
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:777:18@pickupLocations",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:905:18@pickupLocations",
                                                         "data-orchids-name": "div",
                                                         className: "grid grid-cols-2 gap-3",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:778:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:906:20@pickupLocations",
                                                                 "data-orchids-name": "div",
                                                                 className: "space-y-2",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:779:22@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:907:22@pickupLocations",
                                                                         "data-orchids-name": "Label",
                                                                         className: "text-sm font-medium text-card-foreground",
                                                                         children: "Load Quantity (tons) *"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 779,
+                                                                        lineNumber: 907,
                                                                         columnNumber: 23
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:782:22@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:910:22@pickupLocations",
                                                                         "data-orchids-name": "Input",
                                                                         type: "number",
                                                                         placeholder: "10",
@@ -1365,52 +1488,52 @@ function RoutePlanningSection() {
                                                                         className: errors[`loadQuantity_${location.id}`] ? "border-destructive" : ""
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 782,
+                                                                        lineNumber: 910,
                                                                         columnNumber: 23
                                                                     }, this),
                                                                     errors[`loadQuantity_${location.id}`] && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:790:24@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:918:24@pickupLocations",
                                                                         "data-orchids-name": "p",
                                                                         className: "text-sm text-destructive flex items-center gap-1",
                                                                         children: [
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:791:26",
+                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:919:26",
                                                                                 "data-orchids-name": "AlertCircle",
                                                                                 className: "h-3 w-3"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                lineNumber: 791,
+                                                                                lineNumber: 919,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             errors[`loadQuantity_${location.id}`]
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 790,
+                                                                        lineNumber: 918,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 778,
+                                                                lineNumber: 906,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:797:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:925:20@pickupLocations",
                                                                 "data-orchids-name": "div",
                                                                 className: "space-y-2",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:798:22@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:926:22@pickupLocations",
                                                                         "data-orchids-name": "Label",
                                                                         className: "text-sm font-medium text-card-foreground",
                                                                         children: "Type of Goods *"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 798,
+                                                                        lineNumber: 926,
                                                                         columnNumber: 23
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1421,125 +1544,125 @@ function RoutePlanningSection() {
                                                                         children: [
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectTrigger"], {
                                                                                 "data-map-index": index,
-                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:805:24@pickupLocations",
+                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:933:24@pickupLocations",
                                                                                 "data-orchids-name": "SelectTrigger",
                                                                                 className: errors[`cropType_${location.id}`] ? "border-destructive" : "",
                                                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {
                                                                                     "data-map-index": index,
-                                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:806:26@pickupLocations",
+                                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:934:26@pickupLocations",
                                                                                     "data-orchids-name": "SelectValue",
                                                                                     placeholder: "Select goods"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                    lineNumber: 806,
+                                                                                    lineNumber: 934,
                                                                                     columnNumber: 27
                                                                                 }, this)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                lineNumber: 805,
+                                                                                lineNumber: 933,
                                                                                 columnNumber: 25
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
                                                                                 "data-map-index": index,
-                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:808:24@pickupLocations",
+                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:936:24@pickupLocations",
                                                                                 "data-orchids-name": "SelectContent",
                                                                                 children: cropTypes.map((crop)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:810:28@cropTypes",
+                                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:938:28@cropTypes",
                                                                                         "data-orchids-name": "SelectItem",
                                                                                         value: crop,
                                                                                         children: crop
                                                                                     }, crop, false, {
                                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                        lineNumber: 810,
+                                                                                        lineNumber: 938,
                                                                                         columnNumber: 29
                                                                                     }, this))
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                lineNumber: 808,
+                                                                                lineNumber: 936,
                                                                                 columnNumber: 25
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 801,
+                                                                        lineNumber: 929,
                                                                         columnNumber: 23
                                                                     }, this),
                                                                     errors[`cropType_${location.id}`] && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:815:24@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:943:24@pickupLocations",
                                                                         "data-orchids-name": "p",
                                                                         className: "text-sm text-destructive flex items-center gap-1",
                                                                         children: [
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:816:26",
+                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:944:26",
                                                                                 "data-orchids-name": "AlertCircle",
                                                                                 className: "h-3 w-3"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                lineNumber: 816,
+                                                                                lineNumber: 944,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             errors[`cropType_${location.id}`]
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 815,
+                                                                        lineNumber: 943,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 797,
+                                                                lineNumber: 925,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 777,
+                                                        lineNumber: 905,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                         "data-map-index": index,
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:823:18@pickupLocations",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:951:18@pickupLocations",
                                                         "data-orchids-name": "div",
                                                         className: "space-y-2",
                                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                             "data-map-index": index,
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:824:20@pickupLocations",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:952:20@pickupLocations",
                                                             "data-orchids-name": "Label",
                                                             className: "text-sm font-medium text-card-foreground",
                                                             children: "Constraints"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 824,
+                                                            lineNumber: 952,
                                                             columnNumber: 21
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 823,
+                                                        lineNumber: 951,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                         "data-map-index": index,
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:829:18@pickupLocations",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:957:18@pickupLocations",
                                                         "data-orchids-name": "div",
                                                         className: "grid grid-cols-2 gap-3",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:830:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:958:20@pickupLocations",
                                                                 "data-orchids-name": "div",
                                                                 className: "space-y-2",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:831:22@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:959:22@pickupLocations",
                                                                         "data-orchids-name": "Label",
                                                                         className: "text-sm font-medium text-card-foreground",
                                                                         children: "Priority"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 831,
+                                                                        lineNumber: 959,
                                                                         columnNumber: 23
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1550,98 +1673,98 @@ function RoutePlanningSection() {
                                                                         children: [
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectTrigger"], {
                                                                                 "data-map-index": index,
-                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:840:24@pickupLocations",
+                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:968:24@pickupLocations",
                                                                                 "data-orchids-name": "SelectTrigger",
                                                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {
                                                                                     "data-map-index": index,
-                                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:841:26@pickupLocations",
+                                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:969:26@pickupLocations",
                                                                                     "data-orchids-name": "SelectValue"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                    lineNumber: 841,
+                                                                                    lineNumber: 969,
                                                                                     columnNumber: 27
                                                                                 }, this)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                lineNumber: 840,
+                                                                                lineNumber: 968,
                                                                                 columnNumber: 25
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
                                                                                 "data-map-index": index,
-                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:843:24@pickupLocations",
+                                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:971:24@pickupLocations",
                                                                                 "data-orchids-name": "SelectContent",
                                                                                 children: [
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
                                                                                         "data-map-index": index,
-                                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:844:26@pickupLocations",
+                                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:972:26@pickupLocations",
                                                                                         "data-orchids-name": "SelectItem",
                                                                                         value: "low",
                                                                                         children: "Low"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                        lineNumber: 844,
+                                                                                        lineNumber: 972,
                                                                                         columnNumber: 27
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
                                                                                         "data-map-index": index,
-                                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:845:26@pickupLocations",
+                                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:973:26@pickupLocations",
                                                                                         "data-orchids-name": "SelectItem",
                                                                                         value: "medium",
                                                                                         children: "Medium"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                        lineNumber: 845,
+                                                                                        lineNumber: 973,
                                                                                         columnNumber: 27
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
                                                                                         "data-map-index": index,
-                                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:846:26@pickupLocations",
+                                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:974:26@pickupLocations",
                                                                                         "data-orchids-name": "SelectItem",
                                                                                         value: "high",
                                                                                         children: "High"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                        lineNumber: 846,
+                                                                                        lineNumber: 974,
                                                                                         columnNumber: 27
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                                lineNumber: 843,
+                                                                                lineNumber: 971,
                                                                                 columnNumber: 25
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 834,
+                                                                        lineNumber: 962,
                                                                         columnNumber: 23
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 830,
+                                                                lineNumber: 958,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:851:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:979:20@pickupLocations",
                                                                 "data-orchids-name": "div",
                                                                 className: "space-y-2",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:852:22@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:980:22@pickupLocations",
                                                                         "data-orchids-name": "Label",
                                                                         className: "text-sm font-medium text-card-foreground",
                                                                         children: "Max Delivery Time (hours)"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 852,
+                                                                        lineNumber: 980,
                                                                         columnNumber: 23
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                                         "data-map-index": index,
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:855:22@pickupLocations",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:983:22@pickupLocations",
                                                                         "data-orchids-name": "Input",
                                                                         type: "number",
                                                                         placeholder: "8",
@@ -1651,41 +1774,41 @@ function RoutePlanningSection() {
                                                                             })
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 855,
+                                                                        lineNumber: 983,
                                                                         columnNumber: 23
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 851,
+                                                                lineNumber: 979,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 829,
+                                                        lineNumber: 957,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                         "data-map-index": index,
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:864:18@pickupLocations",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:992:18@pickupLocations",
                                                         "data-orchids-name": "div",
                                                         className: "space-y-2",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:865:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:993:20@pickupLocations",
                                                                 "data-orchids-name": "Label",
                                                                 className: "text-sm font-medium text-card-foreground",
                                                                 children: "Notes"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 865,
+                                                                lineNumber: 993,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
                                                                 "data-map-index": index,
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:868:20@pickupLocations",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:996:20@pickupLocations",
                                                                 "data-orchids-name": "Textarea",
                                                                 placeholder: "Add any special instructions or constraints",
                                                                 value: location.notes || "",
@@ -1694,125 +1817,125 @@ function RoutePlanningSection() {
                                                                     })
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 868,
+                                                                lineNumber: 996,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 864,
+                                                        lineNumber: 992,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 740,
+                                                lineNumber: 868,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, location.id, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 725,
+                                        lineNumber: 853,
                                         columnNumber: 15
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 723,
+                                lineNumber: 851,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                        lineNumber: 705,
+                        lineNumber: 833,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
-                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:881:8",
+                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1009:8",
                         "data-orchids-name": "Dialog",
                         open: showConfirmModal,
                         onOpenChange: setShowConfirmModal,
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogTrigger"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:882:10",
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1010:10",
                                 "data-orchids-name": "DialogTrigger",
                                 asChild: true,
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:883:12",
+                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1011:12",
                                     "data-orchids-name": "Button",
                                     className: "w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-medium py-6 text-lg hover:scale-[1.02] transition-all duration-200",
                                     disabled: isLoading || isOverCapacity || selectedTrucks.length === 0,
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$route$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Route$3e$__["Route"], {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:887:14",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1015:14",
                                             "data-orchids-name": "Route",
                                             className: "h-5 w-5 mr-2"
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 887,
+                                            lineNumber: 1015,
                                             columnNumber: 15
                                         }, this),
                                         isLoading ? "Optimizing Route..." : "Generate Path"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                    lineNumber: 883,
+                                    lineNumber: 1011,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 882,
+                                lineNumber: 1010,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:891:10",
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1019:10",
                                 "data-orchids-name": "DialogContent",
                                 className: "bg-card border-border",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogHeader"], {
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:892:12",
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1020:12",
                                         "data-orchids-name": "DialogHeader",
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogTitle"], {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:893:14",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1021:14",
                                             "data-orchids-name": "DialogTitle",
                                             className: "text-card-foreground",
                                             children: "Confirm Route Optimization"
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 893,
+                                            lineNumber: 1021,
                                             columnNumber: 15
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 892,
+                                        lineNumber: 1020,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:895:12",
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1023:12",
                                         "data-orchids-name": "div",
                                         className: "space-y-4",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:896:14",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1024:14",
                                                 "data-orchids-name": "div",
                                                 className: "space-y-2",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:897:16",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1025:16",
                                                         "data-orchids-name": "h4",
                                                         className: "font-medium text-card-foreground",
                                                         children: "Route Summary"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 897,
+                                                        lineNumber: 1025,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:898:16",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1026:16",
                                                         "data-orchids-name": "div",
                                                         className: "space-y-1 text-sm text-muted-foreground",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:899:18",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1027:18",
                                                                 "data-orchids-name": "p",
                                                                 children: [
                                                                     "Selected Trucks: ",
@@ -1820,11 +1943,11 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 899,
+                                                                lineNumber: 1027,
                                                                 columnNumber: 19
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:900:18",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1028:18",
                                                                 "data-orchids-name": "p",
                                                                 children: [
                                                                     "Total Capacity: ",
@@ -1833,11 +1956,11 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 900,
+                                                                lineNumber: 1028,
                                                                 columnNumber: 19
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:901:18",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1029:18",
                                                                 "data-orchids-name": "p",
                                                                 children: [
                                                                     "Total Load: ",
@@ -1846,11 +1969,11 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 901,
+                                                                lineNumber: 1029,
                                                                 columnNumber: 19
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:902:18",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1030:18",
                                                                 "data-orchids-name": "p",
                                                                 children: [
                                                                     "Pickup Locations: ",
@@ -1858,50 +1981,50 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 902,
+                                                                lineNumber: 1030,
                                                                 columnNumber: 19
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 898,
+                                                        lineNumber: 1026,
                                                         columnNumber: 17
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 896,
+                                                lineNumber: 1024,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:905:14",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1033:14",
                                                 "data-orchids-name": "div",
                                                 className: "flex gap-3",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:906:16@handleOptimizeRoute",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1034:16@handleOptimizeRoute",
                                                         "data-orchids-name": "Button",
                                                         onClick: handleOptimizeRoute,
                                                         className: "flex-1",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Navigation$3e$__["Navigation"], {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:907:18",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1035:18",
                                                                 "data-orchids-name": "Navigation",
                                                                 className: "h-4 w-4 mr-2"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 907,
+                                                                lineNumber: 1035,
                                                                 columnNumber: 19
                                                             }, this),
                                                             "Optimize Route"
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 906,
+                                                        lineNumber: 1034,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:910:16",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1038:16",
                                                         "data-orchids-name": "Button",
                                                         variant: "outline",
                                                         onClick: ()=>setShowConfirmModal(false),
@@ -1909,175 +2032,223 @@ function RoutePlanningSection() {
                                                         children: "Cancel"
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 910,
+                                                        lineNumber: 1038,
                                                         columnNumber: 17
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 905,
+                                                lineNumber: 1033,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 895,
+                                        lineNumber: 1023,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 891,
+                                lineNumber: 1019,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                        lineNumber: 881,
+                        lineNumber: 1009,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                lineNumber: 586,
+                lineNumber: 714,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:924:6",
+                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1052:6",
                 "data-orchids-name": "div",
                 className: "w-full lg:w-3/5 flex flex-col gap-6",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
-                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:926:8",
+                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1054:8",
                         "data-orchids-name": "Card",
                         className: "bg-card border-border flex-1 min-h-[400px]",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardHeader"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:927:10",
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1055:10",
                                 "data-orchids-name": "CardHeader",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:928:12",
+                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1056:12",
                                     "data-orchids-name": "div",
                                     className: "flex items-center justify-between",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardTitle"], {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:929:14",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1057:14",
                                             "data-orchids-name": "CardTitle",
                                             className: "flex items-center gap-2 text-card-foreground",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$map$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Map$3e$__["Map"], {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:930:16",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1058:16",
                                                     "data-orchids-name": "Map",
                                                     className: "h-5 w-5 text-primary"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 930,
+                                                    lineNumber: 1058,
                                                     columnNumber: 17
                                                 }, this),
                                                 "Route Map"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 929,
+                                            lineNumber: 1057,
                                             columnNumber: 15
                                         }, this),
-                                        pythonData && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:934:16",
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1061:14",
                                             "data-orchids-name": "div",
                                             className: "flex items-center gap-2",
                                             children: [
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:935:18",
-                                                    "data-orchids-name": "Badge",
-                                                    variant: "secondary",
-                                                    className: "bg-blue-500/20 text-blue-400",
-                                                    children: "Python Optimized"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 935,
-                                                    columnNumber: 19
-                                                }, this),
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:938:18",
-                                                    "data-orchids-name": "Badge",
-                                                    variant: "secondary",
-                                                    className: "bg-green-500/20 text-green-400",
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1063:16",
+                                                    "data-orchids-name": "div",
+                                                    className: "flex items-center bg-muted rounded-lg p-1",
                                                     children: [
-                                                        pythonData.route?.length || 0,
-                                                        " Stops"
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1064:18",
+                                                            "data-orchids-name": "Button",
+                                                            variant: mapType === "roadmap" ? "default" : "ghost",
+                                                            size: "sm",
+                                                            onClick: ()=>setMapType("roadmap"),
+                                                            className: "h-8 px-3 text-xs",
+                                                            children: "Road"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
+                                                            lineNumber: 1064,
+                                                            columnNumber: 19
+                                                        }, this),
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1072:18",
+                                                            "data-orchids-name": "Button",
+                                                            variant: mapType === "satellite" ? "default" : "ghost",
+                                                            size: "sm",
+                                                            onClick: ()=>setMapType("satellite"),
+                                                            className: "h-8 px-3 text-xs",
+                                                            children: "Satellite"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
+                                                            lineNumber: 1072,
+                                                            columnNumber: 19
+                                                        }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 938,
-                                                    columnNumber: 19
-                                                }, this)
-                                            ]
-                                        }, void 0, true, {
-                                            fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 934,
-                                            columnNumber: 17
-                                        }, this)
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                    lineNumber: 928,
-                                    columnNumber: 13
-                                }, this)
-                            }, void 0, false, {
-                                fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 927,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:945:10",
-                                "data-orchids-name": "CardContent",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:946:12",
-                                        "data-orchids-name": "div",
-                                        className: "relative",
-                                        children: [
-                                            !isMapLoaded && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:948:16",
-                                                "data-orchids-name": "div",
-                                                className: "absolute inset-0 bg-muted/50 flex items-center justify-center z-10 rounded-lg",
-                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:949:18",
+                                                    lineNumber: 1063,
+                                                    columnNumber: 17
+                                                }, this),
+                                                pythonData && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1082:18",
                                                     "data-orchids-name": "div",
-                                                    className: "text-center space-y-2",
+                                                    className: "flex items-center gap-2",
                                                     children: [
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:950:20",
-                                                            "data-orchids-name": "div",
-                                                            className: "animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1083:20",
+                                                            "data-orchids-name": "Badge",
+                                                            variant: "secondary",
+                                                            className: "bg-blue-500/20 text-blue-400",
+                                                            children: "Python Optimized"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 950,
+                                                            lineNumber: 1083,
                                                             columnNumber: 21
                                                         }, this),
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:951:20",
-                                                            "data-orchids-name": "p",
-                                                            className: "text-sm text-muted-foreground",
-                                                            children: "Loading map..."
-                                                        }, void 0, false, {
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1086:20",
+                                                            "data-orchids-name": "Badge",
+                                                            variant: "secondary",
+                                                            className: "bg-green-500/20 text-green-400",
+                                                            children: [
+                                                                pythonData.route?.length || 0,
+                                                                " Stops"
+                                                            ]
+                                                        }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 951,
+                                                            lineNumber: 1086,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 949,
+                                                    lineNumber: 1082,
+                                                    columnNumber: 19
+                                                }, this)
+                                            ]
+                                        }, void 0, true, {
+                                            fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
+                                            lineNumber: 1061,
+                                            columnNumber: 15
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
+                                    lineNumber: 1056,
+                                    columnNumber: 13
+                                }, this)
+                            }, void 0, false, {
+                                fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
+                                lineNumber: 1055,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1094:10",
+                                "data-orchids-name": "CardContent",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1095:12",
+                                        "data-orchids-name": "div",
+                                        className: "relative",
+                                        children: [
+                                            !isMapLoaded && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1097:16",
+                                                "data-orchids-name": "div",
+                                                className: "absolute inset-0 bg-muted/50 flex items-center justify-center z-10 rounded-lg",
+                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1098:18",
+                                                    "data-orchids-name": "div",
+                                                    className: "text-center space-y-2",
+                                                    children: [
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1099:20",
+                                                            "data-orchids-name": "div",
+                                                            className: "animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
+                                                            lineNumber: 1099,
+                                                            columnNumber: 21
+                                                        }, this),
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1100:20",
+                                                            "data-orchids-name": "p",
+                                                            className: "text-sm text-muted-foreground",
+                                                            children: "Loading map..."
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
+                                                            lineNumber: 1100,
+                                                            columnNumber: 21
+                                                        }, this)
+                                                    ]
+                                                }, void 0, true, {
+                                                    fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
+                                                    lineNumber: 1098,
                                                     columnNumber: 19
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 948,
+                                                lineNumber: 1097,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:955:14@mapRef",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1104:14@mapRef",
                                                 "data-orchids-name": "div",
                                                 ref: mapRef,
                                                 className: "w-full h-96 rounded-lg border border-border",
@@ -2086,32 +2257,32 @@ function RoutePlanningSection() {
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 955,
+                                                lineNumber: 1104,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 946,
+                                        lineNumber: 1095,
                                         columnNumber: 13
                                     }, this),
                                     pythonData && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:963:14",
+                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1112:14",
                                         "data-orchids-name": "div",
                                         className: "mt-4 space-y-3",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:964:16",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1113:16",
                                                 "data-orchids-name": "div",
                                                 className: "grid grid-cols-2 gap-4",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:965:18",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1114:18",
                                                         "data-orchids-name": "div",
                                                         className: "p-3 bg-muted rounded-lg",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:966:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1115:20",
                                                                 "data-orchids-name": "div",
                                                                 className: "text-lg font-bold text-card-foreground",
                                                                 children: [
@@ -2120,32 +2291,32 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 966,
+                                                                lineNumber: 1115,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:969:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1118:20",
                                                                 "data-orchids-name": "div",
                                                                 className: "text-sm text-muted-foreground",
                                                                 children: "Total Distance"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 969,
+                                                                lineNumber: 1118,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 965,
+                                                        lineNumber: 1114,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:971:18",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1120:18",
                                                         "data-orchids-name": "div",
                                                         className: "p-3 bg-muted rounded-lg",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:972:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1121:20",
                                                                 "data-orchids-name": "div",
                                                                 className: "text-lg font-bold text-card-foreground",
                                                                 children: [
@@ -2154,104 +2325,104 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 972,
+                                                                lineNumber: 1121,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:975:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1124:20",
                                                                 "data-orchids-name": "div",
                                                                 className: "text-sm text-muted-foreground",
                                                                 children: "Total Time"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 975,
+                                                                lineNumber: 1124,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 971,
+                                                        lineNumber: 1120,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 964,
+                                                lineNumber: 1113,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:979:16",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1128:16",
                                                 "data-orchids-name": "div",
                                                 className: "p-3 bg-muted rounded-lg",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:980:18",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1129:18",
                                                         "data-orchids-name": "div",
                                                         className: "flex items-center gap-2 mb-2",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Navigation$3e$__["Navigation"], {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:981:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1130:20",
                                                                 "data-orchids-name": "Navigation",
                                                                 className: "h-4 w-4 text-primary"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 981,
+                                                                lineNumber: 1130,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:982:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1131:20",
                                                                 "data-orchids-name": "span",
                                                                 className: "font-medium text-card-foreground",
                                                                 children: "Route Summary"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 982,
+                                                                lineNumber: 1131,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 980,
+                                                        lineNumber: 1129,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:984:18",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1133:18",
                                                         "data-orchids-name": "div",
                                                         className: "text-sm text-muted-foreground space-y-1",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:985:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1134:20",
                                                                 "data-orchids-name": "p",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:985:23",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1134:23",
                                                                         "data-orchids-name": "strong",
                                                                         children: "Truck Type:"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 985,
-                                                                        columnNumber: 111
+                                                                        lineNumber: 1134,
+                                                                        columnNumber: 112
                                                                     }, this),
                                                                     " ",
                                                                     pythonData.summary?.type || 'N/A'
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 985,
+                                                                lineNumber: 1134,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:986:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1135:20",
                                                                 "data-orchids-name": "p",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:986:23",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1135:23",
                                                                         "data-orchids-name": "strong",
                                                                         children: "Capacity:"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 986,
-                                                                        columnNumber: 111
+                                                                        lineNumber: 1135,
+                                                                        columnNumber: 112
                                                                     }, this),
                                                                     " ",
                                                                     pythonData.summary?.capacity_t || 0,
@@ -2259,21 +2430,21 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 986,
+                                                                lineNumber: 1135,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:987:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1136:20",
                                                                 "data-orchids-name": "p",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:987:23",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1136:23",
                                                                         "data-orchids-name": "strong",
                                                                         children: "Load:"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 987,
-                                                                        columnNumber: 111
+                                                                        lineNumber: 1136,
+                                                                        columnNumber: 112
                                                                     }, this),
                                                                     " ",
                                                                     pythonData.summary?.load_t || 0,
@@ -2281,21 +2452,21 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 987,
+                                                                lineNumber: 1136,
                                                                 columnNumber: 21
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:988:20",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1137:20",
                                                                 "data-orchids-name": "p",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:988:23",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1137:23",
                                                                         "data-orchids-name": "strong",
                                                                         children: "Utilization:"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 988,
-                                                                        columnNumber: 111
+                                                                        lineNumber: 1137,
+                                                                        columnNumber: 112
                                                                     }, this),
                                                                     " ",
                                                                     pythonData.constraints?.utilization_pct || 0,
@@ -2303,142 +2474,142 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 988,
+                                                                lineNumber: 1137,
                                                                 columnNumber: 21
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 984,
+                                                        lineNumber: 1133,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 979,
+                                                lineNumber: 1128,
                                                 columnNumber: 17
                                             }, this),
                                             pythonData.constraints?.flags && pythonData.constraints.flags.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:993:18",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1142:18",
                                                 "data-orchids-name": "div",
                                                 className: "p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:994:20",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1143:20",
                                                         "data-orchids-name": "div",
                                                         className: "flex items-center gap-2 mb-2",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:995:22",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1144:22",
                                                                 "data-orchids-name": "AlertCircle",
                                                                 className: "h-4 w-4 text-yellow-400"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 995,
+                                                                lineNumber: 1144,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:996:22",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1145:22",
                                                                 "data-orchids-name": "span",
                                                                 className: "font-medium text-yellow-400",
                                                                 children: "Constraints"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 996,
+                                                                lineNumber: 1145,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 994,
+                                                        lineNumber: 1143,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:998:20",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1147:20",
                                                         "data-orchids-name": "div",
                                                         className: "space-y-1",
                                                         children: pythonData.constraints.flags.map((flag, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1000:24",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1149:24",
                                                                 "data-orchids-name": "div",
                                                                 className: "flex items-center gap-2 text-sm",
                                                                 children: [
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1001:26",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1150:26",
                                                                         "data-orchids-name": "span",
                                                                         className: `w-2 h-2 rounded-full ${flag.level === 'ok' ? 'bg-green-400' : flag.level === 'warn' ? 'bg-yellow-400' : 'bg-red-400'}`
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 1001,
+                                                                        lineNumber: 1150,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1005:26",
+                                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1154:26",
                                                                         "data-orchids-name": "span",
                                                                         className: `${flag.level === 'ok' ? 'text-green-400' : flag.level === 'warn' ? 'text-yellow-400' : 'text-red-400'}`,
                                                                         children: flag.message
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                        lineNumber: 1005,
+                                                                        lineNumber: 1154,
                                                                         columnNumber: 27
                                                                     }, this)
                                                                 ]
                                                             }, index, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 1000,
+                                                                lineNumber: 1149,
                                                                 columnNumber: 25
                                                             }, this))
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 998,
+                                                        lineNumber: 1147,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 993,
+                                                lineNumber: 1142,
                                                 columnNumber: 19
                                             }, this),
                                             pythonData.summary?.violations && pythonData.summary.violations.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1018:18",
+                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1167:18",
                                                 "data-orchids-name": "div",
                                                 className: "p-3 bg-red-500/10 border border-red-500/20 rounded-lg",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1019:20",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1168:20",
                                                         "data-orchids-name": "div",
                                                         className: "flex items-center gap-2 mb-2",
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1020:22",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1169:22",
                                                                 "data-orchids-name": "AlertCircle",
                                                                 className: "h-4 w-4 text-red-400"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 1020,
+                                                                lineNumber: 1169,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1021:22",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1170:22",
                                                                 "data-orchids-name": "span",
                                                                 className: "font-medium text-red-400",
                                                                 children: "Violations"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 1021,
+                                                                lineNumber: 1170,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 1019,
+                                                        lineNumber: 1168,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1023:20",
+                                                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1172:20",
                                                         "data-orchids-name": "div",
                                                         className: "space-y-1",
                                                         children: pythonData.summary.violations.map((violation, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1025:24",
+                                                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1174:24",
                                                                 "data-orchids-name": "p",
                                                                 className: "text-sm text-red-400",
                                                                 children: [
@@ -2447,80 +2618,80 @@ function RoutePlanningSection() {
                                                                 ]
                                                             }, index, true, {
                                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                lineNumber: 1025,
+                                                                lineNumber: 1174,
                                                                 columnNumber: 25
                                                             }, this))
                                                     }, void 0, false, {
                                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                        lineNumber: 1023,
+                                                        lineNumber: 1172,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                lineNumber: 1018,
+                                                lineNumber: 1167,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                        lineNumber: 963,
+                                        lineNumber: 1112,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 945,
+                                lineNumber: 1094,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                        lineNumber: 926,
+                        lineNumber: 1054,
                         columnNumber: 9
                     }, this),
                     optimizedRoute && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
-                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1037:10",
+                        "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1186:10",
                         "data-orchids-name": "Card",
                         className: "bg-card border-border",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardHeader"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1038:12",
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1187:12",
                                 "data-orchids-name": "CardHeader",
                                 className: "pb-4",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1039:14",
+                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1188:14",
                                     "data-orchids-name": "div",
                                     className: "flex items-center justify-between",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardTitle"], {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1040:16",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1189:16",
                                             "data-orchids-name": "CardTitle",
                                             className: "flex items-center gap-2 text-card-foreground",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$navigation$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Navigation2$3e$__["Navigation2"], {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1041:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1190:18",
                                                     "data-orchids-name": "Navigation2",
                                                     className: "h-5 w-5 text-primary"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1041,
+                                                    lineNumber: 1190,
                                                     columnNumber: 19
                                                 }, this),
                                                 "Route Summary"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1040,
+                                            lineNumber: 1189,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1044:16",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1193:16",
                                             "data-orchids-name": "div",
                                             className: "flex items-center gap-2",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1045:18@handleSaveRoute",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1194:18@handleSaveRoute",
                                                     "data-orchids-name": "Button",
                                                     onClick: handleSaveRoute,
                                                     size: "sm",
@@ -2528,11 +2699,11 @@ function RoutePlanningSection() {
                                                     children: "Save Route"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1045,
+                                                    lineNumber: 1194,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1052:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1201:18",
                                                     "data-orchids-name": "Button",
                                                     onClick: ()=>handleExportRoute("pdf"),
                                                     size: "sm",
@@ -2540,11 +2711,11 @@ function RoutePlanningSection() {
                                                     children: "Export PDF"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1052,
+                                                    lineNumber: 1201,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1059:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1208:18",
                                                     "data-orchids-name": "Button",
                                                     onClick: ()=>handleExportRoute("csv"),
                                                     size: "sm",
@@ -2552,71 +2723,71 @@ function RoutePlanningSection() {
                                                     children: "Export CSV"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1059,
+                                                    lineNumber: 1208,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1044,
+                                            lineNumber: 1193,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                    lineNumber: 1039,
+                                    lineNumber: 1188,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 1038,
+                                lineNumber: 1187,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
-                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1069:12",
+                                "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1218:12",
                                 "data-orchids-name": "CardContent",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1070:14",
+                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1219:14",
                                     "data-orchids-name": "div",
                                     className: "space-y-4",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1072:16",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1221:16",
                                             "data-orchids-name": "div",
                                             className: "space-y-2",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1073:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1222:18",
                                                     "data-orchids-name": "h4",
                                                     className: "font-medium text-card-foreground",
                                                     children: "Assigned Trucks"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1073,
+                                                    lineNumber: 1222,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1074:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1223:18",
                                                     "data-orchids-name": "div",
                                                     className: "flex flex-wrap gap-2",
                                                     children: optimizedRoute.assignedTrucks.map((truck)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1076:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1225:22",
                                                             "data-orchids-name": "div",
                                                             className: "flex items-center gap-2 p-2 bg-muted rounded-lg",
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1077:24",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1226:24",
                                                                     "data-orchids-name": "Badge",
                                                                     variant: "secondary",
                                                                     className: "text-xs",
                                                                     children: truck.truckNumber
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1077,
+                                                                    lineNumber: 1226,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1080:24",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1229:24",
                                                                     "data-orchids-name": "span",
                                                                     className: "text-xs text-muted-foreground",
                                                                     children: [
@@ -2626,188 +2797,188 @@ function RoutePlanningSection() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1080,
+                                                                    lineNumber: 1229,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             ]
                                                         }, truck.id, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1076,
+                                                            lineNumber: 1225,
                                                             columnNumber: 23
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1074,
+                                                    lineNumber: 1223,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1072,
+                                            lineNumber: 1221,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1088:16",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1237:16",
                                             "data-orchids-name": "Separator"
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1088,
+                                            lineNumber: 1237,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1091:16",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1240:16",
                                             "data-orchids-name": "div",
                                             className: "grid grid-cols-3 gap-4",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1092:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1241:18",
                                                     "data-orchids-name": "div",
                                                     className: "text-center p-3 bg-muted rounded-lg",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1093:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1242:20",
                                                             "data-orchids-name": "div",
                                                             className: "text-2xl font-bold text-card-foreground",
                                                             children: optimizedRoute.pythonData?.summary?.total_distance_km_estimated || optimizedRoute.totalDistance.toFixed(1)
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1093,
+                                                            lineNumber: 1242,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1096:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1245:20",
                                                             "data-orchids-name": "div",
                                                             className: "text-sm text-muted-foreground",
                                                             children: "Total Distance (km)"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1096,
+                                                            lineNumber: 1245,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1092,
+                                                    lineNumber: 1241,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1098:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1247:18",
                                                     "data-orchids-name": "div",
                                                     className: "text-center p-3 bg-muted rounded-lg",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1099:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1248:20",
                                                             "data-orchids-name": "div",
                                                             className: "text-2xl font-bold text-card-foreground",
                                                             children: optimizedRoute.pythonData?.summary?.total_time_min_estimated || Math.round(optimizedRoute.totalTime)
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1099,
+                                                            lineNumber: 1248,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1102:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1251:20",
                                                             "data-orchids-name": "div",
                                                             className: "text-sm text-muted-foreground",
                                                             children: "Total Time (min)"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1102,
+                                                            lineNumber: 1251,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1098,
+                                                    lineNumber: 1247,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1104:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1253:18",
                                                     "data-orchids-name": "div",
                                                     className: "text-center p-3 bg-muted rounded-lg",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1105:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1254:20",
                                                             "data-orchids-name": "div",
                                                             className: "text-2xl font-bold text-green-400",
                                                             children: optimizedRoute.savings.distance.toFixed(1)
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1105,
+                                                            lineNumber: 1254,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1108:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1257:20",
                                                             "data-orchids-name": "div",
                                                             className: "text-sm text-muted-foreground",
                                                             children: "Distance Saved (km)"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1108,
+                                                            lineNumber: 1257,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1104,
+                                                    lineNumber: 1253,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1091,
+                                            lineNumber: 1240,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1112:16",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1261:16",
                                             "data-orchids-name": "Separator"
                                         }, void 0, false, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1112,
+                                            lineNumber: 1261,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1115:16",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1264:16",
                                             "data-orchids-name": "div",
                                             className: "space-y-3",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1116:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1265:18",
                                                     "data-orchids-name": "h4",
                                                     className: "font-medium text-card-foreground",
                                                     children: "Route Steps"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1116,
+                                                    lineNumber: 1265,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1117:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1266:18",
                                                     "data-orchids-name": "div",
                                                     className: "space-y-2 max-h-64 overflow-y-auto",
                                                     children: optimizedRoute.pythonData?.originalSteps ? // Display Python steps if available
                                                     optimizedRoute.pythonData.originalSteps.map((step, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1121:24",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1270:24",
                                                             "data-orchids-name": "div",
                                                             className: "flex items-center gap-3 p-3 bg-muted rounded-lg",
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1122:26",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1271:26",
                                                                     "data-orchids-name": "div",
                                                                     className: "w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm flex items-center justify-center font-medium flex-shrink-0",
                                                                     children: step.step
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1122,
+                                                                    lineNumber: 1271,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1125:26",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1274:26",
                                                                     "data-orchids-name": "div",
                                                                     className: "flex-1 min-w-0",
                                                                     children: [
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1126:28",
+                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1275:28",
                                                                             "data-orchids-name": "div",
                                                                             className: "font-medium text-card-foreground",
                                                                             children: [
@@ -2819,74 +2990,74 @@ function RoutePlanningSection() {
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                            lineNumber: 1126,
+                                                                            lineNumber: 1275,
                                                                             columnNumber: 29
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1129:28",
+                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1278:28",
                                                                             "data-orchids-name": "div",
                                                                             className: "text-sm text-muted-foreground",
                                                                             children: step.notes || 'No additional notes'
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                            lineNumber: 1129,
+                                                                            lineNumber: 1278,
                                                                             columnNumber: 29
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1125,
+                                                                    lineNumber: 1274,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1133:26",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1282:26",
                                                                     "data-orchids-name": "Badge",
                                                                     variant: "outline",
                                                                     className: "flex-shrink-0",
                                                                     children: step.action
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1133,
+                                                                    lineNumber: 1282,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             ]
                                                         }, `python-step-${index}`, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1121,
+                                                            lineNumber: 1270,
                                                             columnNumber: 25
                                                         }, this)) : // Fallback to regular steps
                                                     optimizedRoute.steps.map((step, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1141:24",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1290:24",
                                                             "data-orchids-name": "div",
                                                             className: "flex items-center gap-3 p-3 bg-muted rounded-lg",
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1142:26",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1291:26",
                                                                     "data-orchids-name": "div",
                                                                     className: "w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm flex items-center justify-center font-medium flex-shrink-0",
                                                                     children: index + 1
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1142,
+                                                                    lineNumber: 1291,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1145:26",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1294:26",
                                                                     "data-orchids-name": "div",
                                                                     className: "flex-1 min-w-0",
                                                                     children: [
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1146:28",
+                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1295:28",
                                                                             "data-orchids-name": "div",
                                                                             className: "font-medium text-card-foreground truncate",
                                                                             children: step.address
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                            lineNumber: 1146,
+                                                                            lineNumber: 1295,
                                                                             columnNumber: 29
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1149:28",
+                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1298:28",
                                                                             "data-orchids-name": "div",
                                                                             className: "text-sm text-muted-foreground",
                                                                             children: [
@@ -2896,22 +3067,22 @@ function RoutePlanningSection() {
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                            lineNumber: 1149,
+                                                                            lineNumber: 1298,
                                                                             columnNumber: 29
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1145,
+                                                                    lineNumber: 1294,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1153:26",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1302:26",
                                                                     "data-orchids-name": "div",
                                                                     className: "text-right flex-shrink-0",
                                                                     children: [
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1154:28",
+                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1303:28",
                                                                             "data-orchids-name": "div",
                                                                             className: "text-sm font-medium text-card-foreground",
                                                                             children: [
@@ -2920,11 +3091,11 @@ function RoutePlanningSection() {
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                            lineNumber: 1154,
+                                                                            lineNumber: 1303,
                                                                             columnNumber: 29
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1157:28",
+                                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1306:28",
                                                                             "data-orchids-name": "div",
                                                                             className: "text-xs text-muted-foreground",
                                                                             children: [
@@ -2933,84 +3104,84 @@ function RoutePlanningSection() {
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                            lineNumber: 1157,
+                                                                            lineNumber: 1306,
                                                                             columnNumber: 29
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1153,
+                                                                    lineNumber: 1302,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1161:26",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1310:26",
                                                                     "data-orchids-name": "Badge",
                                                                     className: `${priorityColors[step.priority]} flex-shrink-0`,
                                                                     children: step.priority
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1161,
+                                                                    lineNumber: 1310,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             ]
                                                         }, step.id, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1141,
+                                                            lineNumber: 1290,
                                                             columnNumber: 25
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1117,
+                                                    lineNumber: 1266,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1115,
+                                            lineNumber: 1264,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1171:16",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1320:16",
                                             "data-orchids-name": "div",
                                             className: "p-4 bg-green-500/10 border border-green-500/20 rounded-lg",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1172:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1321:18",
                                                     "data-orchids-name": "div",
                                                     className: "flex items-center gap-2 mb-2",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$check$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Check$3e$__["Check"], {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1173:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1322:20",
                                                             "data-orchids-name": "Check",
                                                             className: "h-4 w-4 text-green-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1173,
+                                                            lineNumber: 1322,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1174:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1323:20",
                                                             "data-orchids-name": "span",
                                                             className: "font-medium text-green-400",
                                                             children: optimizedRoute.isQuantumOptimized ? 'Quantum Optimization Benefits' : 'Multi-Truck Optimization Benefits'
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1174,
+                                                            lineNumber: 1323,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1172,
+                                                    lineNumber: 1321,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1178:18",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1327:18",
                                                     "data-orchids-name": "div",
                                                     className: "text-sm text-muted-foreground space-y-1",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1179:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1328:20",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• Distance reduced by ",
@@ -3021,11 +3192,11 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1179,
+                                                            lineNumber: 1328,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1180:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1329:20",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• Time saved: ",
@@ -3034,11 +3205,11 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1180,
+                                                            lineNumber: 1329,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1181:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1330:20",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• Estimated fuel savings: $",
@@ -3046,11 +3217,11 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1181,
+                                                            lineNumber: 1330,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1182:20",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1331:20",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
@@ -3059,82 +3230,82 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1182,
+                                                            lineNumber: 1331,
                                                             columnNumber: 21
                                                         }, this),
                                                         optimizedRoute.isQuantumOptimized && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1184:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1333:22",
                                                             "data-orchids-name": "p",
                                                             children: "• Quantum optimization achieved superior multi-truck route efficiency"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1184,
+                                                            lineNumber: 1333,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1178,
+                                                    lineNumber: 1327,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1171,
+                                            lineNumber: 1320,
                                             columnNumber: 17
                                         }, this),
                                         optimizedRoute.pythonData && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1191:18",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1340:18",
                                             "data-orchids-name": "div",
                                             className: "p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1192:20",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1341:20",
                                                     "data-orchids-name": "div",
                                                     className: "flex items-center gap-2 mb-2",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$map$2d$pin$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__MapPin$3e$__["MapPin"], {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1193:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1342:22",
                                                             "data-orchids-name": "MapPin",
                                                             className: "h-4 w-4 text-blue-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1193,
+                                                            lineNumber: 1342,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1194:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1343:22",
                                                             "data-orchids-name": "span",
                                                             className: "font-medium text-blue-400",
                                                             children: "Python Optimization Details"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1194,
+                                                            lineNumber: 1343,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1192,
+                                                    lineNumber: 1341,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1196:20",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1345:20",
                                                     "data-orchids-name": "div",
                                                     className: "text-sm text-muted-foreground space-y-1",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1197:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1346:22",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1197:27",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1346:27",
                                                                     "data-orchids-name": "strong",
                                                                     children: "Truck ID:"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1197,
+                                                                    lineNumber: 1346,
                                                                     columnNumber: 116
                                                                 }, this),
                                                                 " ",
@@ -3142,21 +3313,21 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1197,
+                                                            lineNumber: 1346,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1198:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1347:22",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1198:27",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1347:27",
                                                                     "data-orchids-name": "strong",
                                                                     children: "Original route:"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1198,
+                                                                    lineNumber: 1347,
                                                                     columnNumber: 116
                                                                 }, this),
                                                                 " ",
@@ -3164,21 +3335,21 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1198,
+                                                            lineNumber: 1347,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1199:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1348:22",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1199:27",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1348:27",
                                                                     "data-orchids-name": "strong",
                                                                     children: "Truck type:"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1199,
+                                                                    lineNumber: 1348,
                                                                     columnNumber: 116
                                                                 }, this),
                                                                 " ",
@@ -3186,21 +3357,21 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1199,
+                                                            lineNumber: 1348,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1200:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1349:22",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1200:27",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1349:27",
                                                                     "data-orchids-name": "strong",
                                                                     children: "Capacity:"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1200,
+                                                                    lineNumber: 1349,
                                                                     columnNumber: 116
                                                                 }, this),
                                                                 " ",
@@ -3209,21 +3380,21 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1200,
+                                                            lineNumber: 1349,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1201:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1350:22",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1201:27",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1350:27",
                                                                     "data-orchids-name": "strong",
                                                                     children: "Load:"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1201,
+                                                                    lineNumber: 1350,
                                                                     columnNumber: 116
                                                                 }, this),
                                                                 " ",
@@ -3232,21 +3403,21 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1201,
+                                                            lineNumber: 1350,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1202:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1351:22",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1202:27",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1351:27",
                                                                     "data-orchids-name": "strong",
                                                                     children: "Total Distance:"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1202,
+                                                                    lineNumber: 1351,
                                                                     columnNumber: 116
                                                                 }, this),
                                                                 " ",
@@ -3255,21 +3426,21 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1202,
+                                                            lineNumber: 1351,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1203:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1352:22",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1203:27",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1352:27",
                                                                     "data-orchids-name": "strong",
                                                                     children: "Total Time:"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1203,
+                                                                    lineNumber: 1352,
                                                                     columnNumber: 116
                                                                 }, this),
                                                                 " ",
@@ -3278,21 +3449,21 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1203,
+                                                            lineNumber: 1352,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1204:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1353:22",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1204:27",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1353:27",
                                                                     "data-orchids-name": "strong",
                                                                     children: "Utilization:"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1204,
+                                                                    lineNumber: 1353,
                                                                     columnNumber: 116
                                                                 }, this),
                                                                 " ",
@@ -3301,21 +3472,21 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1204,
+                                                            lineNumber: 1353,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1205:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1354:22",
                                                             "data-orchids-name": "p",
                                                             children: [
                                                                 "• ",
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1205:27",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1354:27",
                                                                     "data-orchids-name": "strong",
                                                                     children: "Time Window:"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1205,
+                                                                    lineNumber: 1354,
                                                                     columnNumber: 116
                                                                 }, this),
                                                                 " ",
@@ -3324,142 +3495,142 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1205,
+                                                            lineNumber: 1354,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1196,
+                                                    lineNumber: 1345,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1191,
+                                            lineNumber: 1340,
                                             columnNumber: 19
                                         }, this),
                                         optimizedRoute.pythonData?.constraints?.flags && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1212:18",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1361:18",
                                             "data-orchids-name": "div",
                                             className: "p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1213:20",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1362:20",
                                                     "data-orchids-name": "div",
                                                     className: "flex items-center gap-2 mb-2",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1214:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1363:22",
                                                             "data-orchids-name": "AlertCircle",
                                                             className: "h-4 w-4 text-yellow-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1214,
+                                                            lineNumber: 1363,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1215:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1364:22",
                                                             "data-orchids-name": "span",
                                                             className: "font-medium text-yellow-400",
                                                             children: "Constraint Analysis"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1215,
+                                                            lineNumber: 1364,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1213,
+                                                    lineNumber: 1362,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1217:20",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1366:20",
                                                     "data-orchids-name": "div",
                                                     className: "space-y-2",
                                                     children: optimizedRoute.pythonData.constraints.flags.map((flag, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1219:24",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1368:24",
                                                             "data-orchids-name": "div",
                                                             className: "flex items-center gap-2 text-sm",
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1220:26",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1369:26",
                                                                     "data-orchids-name": "span",
                                                                     className: `w-2 h-2 rounded-full ${flag.level === 'ok' ? 'bg-green-400' : flag.level === 'warn' ? 'bg-yellow-400' : 'bg-red-400'}`
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1220,
+                                                                    lineNumber: 1369,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1224:26",
+                                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1373:26",
                                                                     "data-orchids-name": "span",
                                                                     className: `${flag.level === 'ok' ? 'text-green-400' : flag.level === 'warn' ? 'text-yellow-400' : 'text-red-400'}`,
                                                                     children: flag.message
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                                    lineNumber: 1224,
+                                                                    lineNumber: 1373,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             ]
                                                         }, index, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1219,
+                                                            lineNumber: 1368,
                                                             columnNumber: 25
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1217,
+                                                    lineNumber: 1366,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1212,
+                                            lineNumber: 1361,
                                             columnNumber: 19
                                         }, this),
                                         optimizedRoute.pythonData?.summary?.violations && optimizedRoute.pythonData.summary.violations.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1238:18",
+                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1387:18",
                                             "data-orchids-name": "div",
                                             className: "p-4 bg-red-500/10 border border-red-500/20 rounded-lg",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1239:20",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1388:20",
                                                     "data-orchids-name": "div",
                                                     className: "flex items-center gap-2 mb-2",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertCircle$3e$__["AlertCircle"], {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1240:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1389:22",
                                                             "data-orchids-name": "AlertCircle",
                                                             className: "h-4 w-4 text-red-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1240,
+                                                            lineNumber: 1389,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1241:22",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1390:22",
                                                             "data-orchids-name": "span",
                                                             className: "font-medium text-red-400",
                                                             children: "Route Violations"
                                                         }, void 0, false, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1241,
+                                                            lineNumber: 1390,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1239,
+                                                    lineNumber: 1388,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1243:20",
+                                                    "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1392:20",
                                                     "data-orchids-name": "div",
                                                     className: "space-y-1",
                                                     children: optimizedRoute.pythonData.summary.violations.map((violation, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$falqon$2d$fleet$2d$optimizer$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1245:24",
+                                                            "data-orchids-id": "src\\components\\RoutePlanningSection.tsx:1394:24",
                                                             "data-orchids-name": "p",
                                                             className: "text-sm text-red-400",
                                                             children: [
@@ -3468,51 +3639,51 @@ function RoutePlanningSection() {
                                                             ]
                                                         }, index, true, {
                                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                            lineNumber: 1245,
+                                                            lineNumber: 1394,
                                                             columnNumber: 25
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                                    lineNumber: 1243,
+                                                    lineNumber: 1392,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                            lineNumber: 1238,
+                                            lineNumber: 1387,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                    lineNumber: 1070,
+                                    lineNumber: 1219,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                                lineNumber: 1069,
+                                lineNumber: 1218,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                        lineNumber: 1037,
+                        lineNumber: 1186,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-                lineNumber: 924,
+                lineNumber: 1052,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/Desktop/falqon-fleet-optimizer/src/components/RoutePlanningSection.tsx",
-        lineNumber: 584,
+        lineNumber: 712,
         columnNumber: 5
     }, this);
 }
-_s(RoutePlanningSection, "TXa5h6A5t6CKFEByVfeYZ6WegYA=");
+_s(RoutePlanningSection, "b/Noyqt88VV8b/aFt5K4W94zwHs=");
 _c = RoutePlanningSection;
 var _c;
 __turbopack_context__.k.register(_c, "RoutePlanningSection");

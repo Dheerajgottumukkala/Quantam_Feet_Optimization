@@ -48,6 +48,8 @@ interface PythonRouteData {
 interface GoogleMapComponentProps {
   pythonData?: PythonRouteData;
   className?: string;
+  mapType?: "roadmap" | "satellite";
+  onMapTypeChange?: (mapType: "roadmap" | "satellite") => void;
 }
 
 declare global {
@@ -57,7 +59,7 @@ declare global {
   }
 }
 
-export default function GoogleMapComponent({ pythonData, className = "" }: GoogleMapComponentProps) {
+export default function GoogleMapComponent({ pythonData, className = "", mapType = "roadmap", onMapTypeChange }: GoogleMapComponentProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const [directionsService, setDirectionsService] = useState<any>(null);
@@ -83,7 +85,7 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
       }
 
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=geometry&callback=initMap`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=geometry,directions&callback=initMap`;
       script.async = true;
       script.defer = true;
       
@@ -103,7 +105,11 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
         const mapInstance = new window.google.maps.Map(mapRef.current, {
           zoom: 12,
           center: { lat: 16.5659605, lng: 81.5225313 }, // Center on Vishnu Institute
-          mapTypeId: window.google.maps.MapTypeId.SATELLITE,
+          mapTypeId: mapType === "roadmap" ? window.google.maps.MapTypeId.ROADMAP : window.google.maps.MapTypeId.SATELLITE,
+          mapTypeControl: true,
+          streetViewControl: false,
+          fullscreenControl: true,
+          zoomControl: true,
           styles: [
             {
               featureType: "poi",
@@ -195,16 +201,19 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
       } as any;
 
       directionsService.route(request, (result: any, status: any) => {
+        console.log('GoogleMapComponent - Directions request status:', status);
+        console.log('GoogleMapComponent - Directions request result:', result);
+        
         if ((window.google.maps.DirectionsStatus && status === window.google.maps.DirectionsStatus.OK) || status === 'OK') {
+          console.log('GoogleMapComponent - Setting directions on renderer');
           directionsRenderer.setDirections(result);
           
           // Add custom markers for each step
           addCustomMarkers(route);
         } else {
-          console.error('Directions request failed:', status);
-          // Fallback: show markers without route
+          console.error('GoogleMapComponent - Directions request failed:', status);
+          // Fallback: show markers and try segment-by-segment directions
           addCustomMarkers(route);
-          // Attempt to draw straight-line polyline between geocoded points
           const coordsList = route.map(name => geocodedPoints[name as keyof typeof geocodedPoints]).filter(Boolean) as { lat: number; lng: number }[];
           if (coordsList.length >= 2) {
             drawDirectionsBySegments(coordsList.map(p => ({ name: '', lat: p.lat, lon: p.lng })));
@@ -258,28 +267,8 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
       });
     };
 
-    const drawPolylineFromPlan = (routePlan: { name: string; lat: number; lon: number }[]) => {
-      const path = routePlan.map(p => ({ lat: p.lat, lng: p.lon }));
-      drawPolyline(path);
-    };
-
-    const drawPolyline = (path: { lat: number; lng: number }[]) => {
-      const polyline = new window.google.maps.Polyline({
-        path,
-        geodesic: true,
-        strokeColor: '#FF6B35',
-        strokeOpacity: 0.9,
-        strokeWeight: 5,
-        map: map
-      });
-      // Fit bounds to the polyline
-      const bounds = new window.google.maps.LatLngBounds();
-      path.forEach(p => bounds.extend(p as any));
-      map.fitBounds(bounds);
-    };
 
     const drawDirectionsBySegments = async (routePlan: { name: string; lat: number; lon: number }[]) => {
-      const allPaths: { lat: number; lng: number }[] = [];
       for (let i = 0; i < routePlan.length - 1; i++) {
         const origin = { lat: routePlan[i].lat, lng: routePlan[i].lon };
         const destination = { lat: routePlan[i + 1].lat, lng: routePlan[i + 1].lon };
@@ -288,22 +277,28 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
           destination,
           travelMode: window.google.maps.TravelMode.DRIVING
         } as any;
+        
         await new Promise<void>((resolve) => {
           directionsService.route(req, (result: any, status: any) => {
             if ((window.google.maps.DirectionsStatus && status === window.google.maps.DirectionsStatus.OK) || status === 'OK') {
-              const route = result.routes[0];
-              const path = route.overview_path.map((p: any) => ({ lat: p.lat(), lng: p.lng() }));
-              allPaths.push(...path);
+              // Create a new directions renderer for this segment
+              const segmentRenderer = new window.google.maps.DirectionsRenderer({
+                draggable: false,
+                suppressMarkers: true,
+                polylineOptions: {
+                  strokeColor: '#FF6B35',
+                  strokeWeight: 6,
+                  strokeOpacity: 0.9
+                }
+              });
+              segmentRenderer.setMap(map);
+              segmentRenderer.setDirections(result);
             } else {
-              // As a last resort, draw a straight segment
-              allPaths.push(origin, destination);
+              console.warn(`Failed to get directions for segment ${i + 1}:`, status);
             }
             resolve();
           });
         });
-      }
-      if (allPaths.length >= 2) {
-        drawPolyline(allPaths);
       }
     };
     const addCustomMarkersFromPlan = (routePlan: { name: string; lat: number; lon: number }[]) => {
@@ -346,6 +341,13 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
 
     drawRoute();
   }, [map, directionsService, directionsRenderer, pythonData]);
+
+  // Update map type when mapType prop changes
+  useEffect(() => {
+    if (map) {
+      map.setMapTypeId(mapType === "roadmap" ? window.google.maps.MapTypeId.ROADMAP : window.google.maps.MapTypeId.SATELLITE);
+    }
+  }, [map, mapType]);
 
   if (error) {
     return (
@@ -395,16 +397,43 @@ export default function GoogleMapComponent({ pythonData, className = "" }: Googl
             <Map className="h-5 w-5 text-primary" />
             Route Map
           </CardTitle>
-          {pythonData && (
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-blue-500/20 text-blue-400">
-                Python Optimized
-              </Badge>
-              <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-                {pythonData.route.length} Stops
-              </Badge>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Map Type Toggle */}
+            {onMapTypeChange && (
+              <div className="flex items-center bg-muted rounded-lg p-1">
+                <button
+                  onClick={() => onMapTypeChange("roadmap")}
+                  className={`h-8 px-3 text-xs rounded-md transition-colors ${
+                    mapType === "roadmap" 
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Road
+                </button>
+                <button
+                  onClick={() => onMapTypeChange("satellite")}
+                  className={`h-8 px-3 text-xs rounded-md transition-colors ${
+                    mapType === "satellite" 
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Satellite
+                </button>
+              </div>
+            )}
+            {pythonData && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="bg-blue-500/20 text-blue-400">
+                  Python Optimized
+                </Badge>
+                <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                  {pythonData.route.length} Stops
+                </Badge>
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>

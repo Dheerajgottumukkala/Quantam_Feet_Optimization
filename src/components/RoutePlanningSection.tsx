@@ -93,6 +93,7 @@ export default function RoutePlanningSection() {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
 
   // Geocoded coordinates from Python output
   const geocodedPoints = {
@@ -148,7 +149,18 @@ export default function RoutePlanningSection() {
       const mapInstance = new window.google.maps.Map(mapRef.current, {
         zoom: 12,
         center: { lat: 16.5659605, lng: 81.5225313 },
-        mapTypeId: window.google.maps.MapTypeId.SATELLITE,
+        mapTypeId: mapType === "roadmap" ? window.google.maps.MapTypeId.ROADMAP : window.google.maps.MapTypeId.SATELLITE,
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: true,
+        zoomControl: true,
+        styles: [
+          {
+            featureType: "poi",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          }
+        ]
       });
 
       setMap(mapInstance);
@@ -167,7 +179,7 @@ export default function RoutePlanningSection() {
       }
 
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=geometry&callback=initMap`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=geometry,directions&callback=initMap`;
       script.async = true;
       script.defer = true;
       
@@ -185,7 +197,15 @@ export default function RoutePlanningSection() {
     }
   }, [map, pythonData]);
 
+  // Update map type when mapType state changes
+  useEffect(() => {
+    if (map) {
+      map.setMapTypeId(mapType === "roadmap" ? window.google.maps.MapTypeId.ROADMAP : window.google.maps.MapTypeId.SATELLITE);
+    }
+  }, [map, mapType]);
+
   const addRouteMarkers = (mapInstance: any, route: string[]) => {
+    // First, add all markers
     route.forEach((location, index) => {
       const coords = geocodedPoints[location as keyof typeof geocodedPoints];
       if (!coords) return;
@@ -223,21 +243,129 @@ export default function RoutePlanningSection() {
       });
     });
 
-    // Draw route line
-    const routeCoordinates = route.map(location => 
-      geocodedPoints[location as keyof typeof geocodedPoints]
-    ).filter(Boolean);
+    // Draw route using Google Directions API to follow roads
+    if (route.length >= 2) {
+      const directionsService = new window.google.maps.DirectionsService();
+      const directionsRenderer = new window.google.maps.DirectionsRenderer({
+        draggable: false,
+        suppressMarkers: true, // We already have custom markers
+        polylineOptions: {
+          strokeColor: '#FF6B35',
+          strokeWeight: 6,
+          strokeOpacity: 0.9
+        }
+      });
 
-    if (routeCoordinates.length > 1) {
-      new window.google.maps.Polyline({
-        path: routeCoordinates,
-        geodesic: true,
-        strokeColor: '#FF6B35',
-        strokeOpacity: 0.9,
-        strokeWeight: 4,
-        map: mapInstance
+      directionsRenderer.setMap(mapInstance);
+
+      // Prepare waypoints (all locations except first and last)
+      const waypoints = route.slice(1, -1).map(location => {
+        const coords = geocodedPoints[location as keyof typeof geocodedPoints];
+        return coords ? { location: coords } : null;
+      }).filter(Boolean);
+
+      const request = {
+        origin: geocodedPoints[route[0] as keyof typeof geocodedPoints],
+        destination: geocodedPoints[route[route.length - 1] as keyof typeof geocodedPoints],
+        waypoints: waypoints,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+        optimizeWaypoints: false // Keep the order as provided
+      };
+
+      directionsService.route(request, (result: any, status: any) => {
+        console.log('Directions request status:', status);
+        console.log('Directions request result:', result);
+        
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          console.log('Setting directions on renderer');
+          directionsRenderer.setDirections(result);
+        } else {
+          console.error('Directions request failed:', status);
+          console.log('Falling back to segment-by-segment routing');
+          // Fallback: draw segment by segment to ensure road following
+          drawRouteBySegments(mapInstance, route);
+          
+          // Additional fallback: draw a simple polyline if directions completely fail
+          setTimeout(() => {
+            console.log('Drawing fallback polyline');
+            const routeCoordinates = route.map(location => 
+              geocodedPoints[location as keyof typeof geocodedPoints]
+            ).filter(Boolean);
+            
+            if (routeCoordinates.length > 1) {
+              new window.google.maps.Polyline({
+                path: routeCoordinates,
+                geodesic: true,
+                strokeColor: '#FF6B35',
+                strokeOpacity: 0.9,
+                strokeWeight: 4,
+                map: mapInstance
+              });
+            }
+          }, 2000);
+        }
       });
     }
+  };
+
+  const drawRouteBySegments = (mapInstance: any, route: string[]) => {
+    const directionsService = new window.google.maps.DirectionsService();
+    const directionsRenderer = new window.google.maps.DirectionsRenderer({
+      draggable: false,
+      suppressMarkers: true,
+      polylineOptions: {
+        strokeColor: '#FF6B35',
+        strokeWeight: 6,
+        strokeOpacity: 0.9
+      }
+    });
+
+    directionsRenderer.setMap(mapInstance);
+
+    // Draw route segment by segment to ensure road following
+    const drawNextSegment = (index: number) => {
+      if (index >= route.length - 1) return;
+
+      const origin = geocodedPoints[route[index] as keyof typeof geocodedPoints];
+      const destination = geocodedPoints[route[index + 1] as keyof typeof geocodedPoints];
+
+      if (!origin || !destination) {
+        drawNextSegment(index + 1);
+        return;
+      }
+
+      const request = {
+        origin: origin,
+        destination: destination,
+        travelMode: window.google.maps.TravelMode.DRIVING
+      };
+
+      directionsService.route(request, (result: any, status: any) => {
+        console.log(`Segment ${index + 1} to ${index + 2} status:`, status);
+        
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          console.log(`Drawing segment ${index + 1} to ${index + 2}`);
+          // Create a new directions renderer for this segment
+          const segmentRenderer = new window.google.maps.DirectionsRenderer({
+            draggable: false,
+            suppressMarkers: true,
+            polylineOptions: {
+              strokeColor: '#FF6B35',
+              strokeWeight: 6,
+              strokeOpacity: 0.9
+            }
+          });
+          segmentRenderer.setMap(mapInstance);
+          segmentRenderer.setDirections(result);
+        } else {
+          console.error(`Failed to get directions for segment ${index + 1} to ${index + 2}:`, status);
+        }
+        // Continue to next segment
+        drawNextSegment(index + 1);
+      });
+    };
+
+    drawNextSegment(0);
   };
 
   const totalCapacity = useMemo(() => {
@@ -930,16 +1058,37 @@ export default function RoutePlanningSection() {
                 <Map className="h-5 w-5 text-primary" />
                 Route Map
               </CardTitle>
-              {pythonData && (
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-400">
-                    Python Optimized
-                  </Badge>
-                  <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-                    {pythonData.route?.length || 0} Stops
-                  </Badge>
+              <div className="flex items-center gap-2">
+                {/* Map Type Toggle */}
+                <div className="flex items-center bg-muted rounded-lg p-1">
+                  <Button
+                    variant={mapType === "roadmap" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setMapType("roadmap")}
+                    className="h-8 px-3 text-xs"
+                  >
+                    Road
+                  </Button>
+                  <Button
+                    variant={mapType === "satellite" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setMapType("satellite")}
+                    className="h-8 px-3 text-xs"
+                  >
+                    Satellite
+                  </Button>
                 </div>
-              )}
+                {pythonData && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-blue-500/20 text-blue-400">
+                      Python Optimized
+                    </Badge>
+                    <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                      {pythonData.route?.length || 0} Stops
+                    </Badge>
+                  </div>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
